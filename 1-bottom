@@ -1,0 +1,45 @@
+= The Bottom =
+
+Low level programming is primarily focused on telling the computer what to do.  To do low level programming we need a language that both we and the computer understand which represents our instructions to the computer.
+
+When we talk about "instructions to the computer", really we mean instructions to the CPU, which then sends instructions of various kinds to other pieces of hardware as well.  Every kind of CPU has different capabilities, and different attached hardware that it supports, and thus has different instructions that we can give it.  Because of this, there are many languages, even at the lowest level, which we need to use when talking to any particular CPU.  In this material we will use ARMv6 assembly as accepted by the GNU assembler.  An assembler is a program which takes assembly code that we type in text files, and translates it into the internal representation used by the computer.  You will need a copy of the GNU assembler for ARM, or a compatible assembler, and a copy of qemu-system, which is a program we will use to simulate an ARMv6 CPU so that we may test our code on any computer.  These programs are freely available on the Internet.
+
+# TODO: material (seperate document) about setup of toolchains, etc, how to inspect registers, etc
+
+Here is your first program:
+
+	mov r0, 42
+
+`mov` is the name of the instruction we are giving to the computer.  `r0` is the name of a register, and `42` is just the number forty-two.
+
+What is a register?  Every CPU has one or more "slots" where they can store data temporarily while working.  These "slots" are called registers.  When a program starts, these slots may be set to any value, since the CPU does not usually bother to make sure they have any particular value, so they may just contain random electrical noise.  After some value has been put into them, then that value is in there until it is overwritten with a different value.
+
+If you run the above program, and then inspect the contents of register 0, you will see the number 42.  `mov` is the instruction that tells the computer to write a value into the a register.  The value can also be specified as a register to read from:
+
+	mov r0, 42
+	mov r1, r0
+
+Now both r0 and r1 are 42.
+
+The act of writing a value into a register may also be called "assignment" or "assigning a value to a register".
+
+The values given to an instruction are often called "arguments" or "parametres".
+
+We can also add to a value:
+
+	mov r0, 30
+	add r0, r0, 12
+
+The `add` instruction takes the values from the second and third arguments, adds them, and puts the result into the register specified by the first argument.
+
+Of course, it doesn't matter what registers we use, as long as we are consistant:
+
+	mov r1, 30
+	add r1, r1, 12
+
+Now the value 42 is in `r1` instead of in `r0`.  We could also use `r1` while performing the computation, but put the result in `r0`:
+
+	mov r1, 30
+	add r0, r1, 12
+
+Now `r0` is 42 again.  Question: what is `r1`?  It's 30, because we wrote a 30 into it with `mov` and `add` only changed the value in `r0`.

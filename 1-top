@@ -1,0 +1,75 @@
+= The Top =
+
+High level programming is primarily focussed on describing ways of doing things, also known as "algorithms".  To do high level programming, we need a language to describe these algoritms in a way that is unambiguous so that we can be sure what we are saying and any computer that hypothetically might run the algorithm would be able to.
+
+Unlike low-level programming, high-level programming is not tied to the inner workings of any particular computer.  Instead, we build abstractions that desribe what we want done and then build programs to translate these abstractions into instructions for the computer.  There may be many different lists of instructions that perform the exact same algorithm.
+
+The language we will start off with for high-level programming is called the Untyped Lambda Calculus.  We will start with this language because it has a very simple syntax.  Syntax is the term for what symbols we use in a language and the ways that they can be put together.
+
+The simplest program in the Untyped Lambda Calculus is:
+
+	x
+
+This program represents the symbol `x`, nothing more, nothing less.  Base symbols in the lambda calculus are usually represented by single letters.
+
+The other construct in the lambda calculus is called a lambda abstraction, sometimes called a function:
+
+	λx.x
+
+A lambda abstraction is always the Greek letter lambda (λ, sometimes represented by \) followed by a single symbol, then a dot (.), then any valid Untyped Lambda Calculus program.  Everything after the dot is considered to be part of the lambda abstration, until the end of the line.  If we do not want this, we may use parentheses to clarify where the end is:
+
+	(λx.x)
+
+Finally, we may express something called an application.  An application is any lambda abstration, followed by any valid Untyped Lambda Calculus program.  We'll start with the simplest program, a single symbol:
+
+	(λx.x)y
+
+So, what do these programs represent?  Well, we already said what this program represents:
+
+	x
+
+Intuitively, a lambda abstraction represents something which takes in some program, and returns some other program.  For example, intuitively:
+
+	(λx.x)y
+
+represents just the symbol `y`, because in the right hand side of (λx.x), the `x` is "bound" to represent whatever program the lambda abstraction is applied to.  So in (λx.x)y, it is applied to `y`, so then the `x` represents `y`.  The process we use to define this is called a "reduction", because we are "reducing" a program from something longer to something shorter by rewriting using certain rules.  We will cover this more in depth later.
+
+== Alpha Equivalence ==
+
+One of the fundamental principles of the lambda calculus is called "alpha equivalence".  This principle is the idea that:
+
+	(λx.x)
+
+and
+
+	(λy.y)
+
+represent the same program.  The idea is that the symbol we bind in a lambda abstraction doesn't matter, since it really just represents the symbol we are going to apply the abstraction to.  This matters because in order to really understand most useful reductions, we will need to be able to rename some things.
+
+By the same logic:
+
+	(λx.y)
+
+and
+
+	(λz.y)
+
+represent the same program.  So do:
+
+	(λx.xy)
+
+and
+
+	(λz.zy)
+
+But these programs are not the same:
+
+	(λx.zy)
+
+and
+
+	(λz.zy)
+
+Because in the first one, the `z` in the body of the lambda abstraction represents `z`, but in the second it has been "bound" (or "captured") by the abstraction, such that it now represents the symbol that the abstraction will be applied to.
+
+The Untyped Lambda Calculus may seem to be so simplistic that it could never be useful, but in fact, the Church–Turing thesis says that this language can represent any algorithm which can be transformed into a series of steps for a machine to follow.
