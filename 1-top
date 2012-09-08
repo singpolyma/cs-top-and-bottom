@@ -32,7 +32,7 @@ Intuitively, a lambda abstraction represents something which takes in some progr
 
 	(λx.x)y
 
-represents just the symbol `y`, because in the right hand side of (λx.x), the `x` is "bound" to represent whatever program the lambda abstraction is applied to.  So in (λx.x)y, it is applied to `y`, so then the `x` represents `y`.  The process we use to define this is called a "reduction", because we are "reducing" a program from something longer to something shorter by rewriting using certain rules.  We will cover this more in depth later.
+represents just the symbol `y`, because in the right hand side of (λx.x), the `x` is "bound" to represent whatever program the lambda abstraction is applied to.  So in (λx.x)y, it is applied to `y`, so then the `x` represents `y` (some of you may recognise this as very similar to the mathematical function f(x) = x).  The process we use to define this is called a "reduction", because we are "reducing" a program from something longer to something shorter by rewriting using certain rules.  We will cover this more in depth later.
 
 == Alpha Equivalence ==
 
