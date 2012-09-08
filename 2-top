@@ -1,0 +1,107 @@
+= Lambda Calculus Reductions =
+
+We have talked about intuitions we can use when thinking about programs in the Untyped Lambda Calculus, but the only real property we've talked about is alpha equivalence.
+
+It is very important to understand that in a very real sense, a program in the Untyped Lambda Calculus does not "do" something, but merely "represents" something.  To return to our simple example:
+
+	(λx.x)y
+
+We said before that this program is equivalent to the symbol `y`.  We could intuitively talk about "running the program and getting a result of `y`".  This intuition can serve us well, but we could just as easily "run" this program and get:
+
+	(λw.(λx.x)y)z
+
+Since this program is also equivalent.  The process of transforming one program into another like this is called "reduction".  Of course, transforming a program into a more complicated program is not normally what we want: we want the program to in some way "get simpler".  The forms that we target as "results" according to our intuition of "running" the program are called "normal forms".
+
+At this point, however, you might be thinking: "but *why* are those programs equivalent?"  Indeed, up to this point we have explained how (through alpha-equivalence)
+
+	(λx.x)
+
+and
+
+	(λy.y)
+
+are equivalent, but how is
+
+	(λx.x)y
+
+equivalent to
+
+	y
+
+This is called beta-reduction.
+
+
+== β-reduction ==
+
+The idea with beta-reduction is that we can replace the "bound argument" in a lambda abstraction with whatever program we apply the abstraction to.  Recall:
+
+	(λx.x)
+
+is a lambda abstraction and:
+
+	(λx.x)y
+
+is an application of that lambda abstraction to the program `y`.  So, if we replace all of the occurances of the bound argument (x) inside the body of the lambda abstraction with the "argument" (y) we get:
+
+	y
+
+As expected.  Similarly:
+
+	(λx.x)(λx.x)
+
+if we replace `x` in the body of the first abstraction with the argument (the program we are appliyng it to) we get:
+
+	(λx.x)
+
+You can see where the intuition of a mathematical function something like `f(x) = x` comes from.  In fact, the primary difference is that our function does not have a name.
+
+What we have discussed so far, however, is not sufficient for beta-reduction.  Consider, for example:
+
+	(λx.(λx.y))y
+
+If we replace all of the `x` in the body with `y` we will get:
+
+	(λy.y)
+
+Which is not what we expect.  We took the symbol `y`, which previously just represented itself, and "captured" it, forcing it now to be bound to the argument of the lambda abstraction.  Because of this notion of "capturing", symbols that are not bound to an argument are sometimes called "free variables".
+
+We might think that a good solution to this is to just ban making changes inside nested lambda abstractions:
+
+	(λx.(λx.y))y
+	(λx.y)
+
+Solved!  Unfortunately, this has the opposite problem:
+
+	(λx.(λy.x))y
+	(λy.x)
+
+We would have expected the nested `x` to be bound (since it is part of the body of the lambda abstraction), but in our result, it ends up being "freed".  In fact, this trick is used to create lambda abstractions which act as though they take multiple arguments (called "currying"):
+
+	((λx.(λy.xy))a)b
+
+Alpha-equivalence comes to our rescue.  We can perform what is called an "alpha-conversion" or "alpha-renaming" in order to keep an equivalent program that will neither capture nor free any variables.
+
+	(λx.(λx.y))y
+	(λx.(λz.y))y
+	(λz.y)
+
+And (λz.y) in alpha-equivalent to (λx.y), so we have solved it!
+
+In general, then, the rule for a single step of beta-reduction is:
+
+1. Choose a new symbol that is not used anywhere else in the program.
+2. Perform an alpha-conversion on the lambda abstraction to the names of any bindings in nested lamba abstractions (and their bound symbols) to this new symbol, if they bind the same symbol as the lambda abstraction we are beta-reducing.
+3. Replace every instance of the bound symbol in the lambda abstraction with the whole content of the program the lambda abstraction was applied to.
+
+Some more examples of single steps of beta-reduction:
+
+	(λw.(λx.x)y)z
+	(λx.x)y
+
+	(λx.(λy.x))y
+	(λy.x)
+
+	(((λx.(λy.(λz.(λx.yz))))w)t)s
+	((λy.(λz.(λr.yz)))t)s
+	(λz.(λr.tz))s
+	(λr.ts)
