@@ -10,7 +10,7 @@ We said before that this program is equivalent to the symbol `y`.  We could intu
 
 	(λw.(λx.x)y)z
 
-Since this program is also equivalent.  The process of transforming one program into another like this is called "reduction".  Of course, transforming a program into a more complicated program is not normally what we want: we want the program to in some way "get simpler".  The forms that we target as "results" according to our intuition of "running" the program are called "normal forms".
+Since this program is also equivalent.  Of course, transforming a program into a more complicated program is not normally what we want: we want the program to in some way "get simpler".  The process of transforming one program into another like this is called "reduction".  The forms that we target as "results" according to our intuition of "running" the program are called "normal forms".
 
 At this point, however, you might be thinking: "but *why* are those programs equivalent?"  Indeed, up to this point we have explained how (through alpha-equivalence)
 
