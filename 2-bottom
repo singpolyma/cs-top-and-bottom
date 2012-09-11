@@ -16,7 +16,7 @@ If you run this program, it will never finish.  That's because the `b` instructi
 
 To solve this problem, ARMv6 allows us to put a specifier on the end of any instruction to say that some condition must be true in order for the instruction to run.  For example, to branch only if something is equal to something else, we can use `beq` instead of just `b`, or `bne` to branch if they are not equal.
 
-We also need a way to say what things we are testing for equality.  The simplest instruction for doing this is `cmp`.
+We also need a way to say what things we are testing for equality.  The simplest instruction for doing this is `cmp`, which takes two arguments and, instead of storing a result somewhere that you can access, changes the value that the CPU uses for conditional execution of any instructions.  For example in:
 
 	doing:
 		sub r0, r0, #6
@@ -24,7 +24,9 @@ We also need a way to say what things we are testing for equality.  The simplest
 		cmp r1, #0
 		bne doing
 
-This code will keep subtracting 6 from r0, and 1 from r1, until r1 equals 0.  What if r1 starts at 0?  Then the first subtraction (which runs before we check for equality) will cause it to no longer equal 0, and it only goes down from there, so the program will run forever.  Lets fix that:
+The `cmp` causes the `bne` to only execute if r1 and 0 are not equal.
+
+The above code will keep subtracting 6 from r0, and 1 from r1, until r1 equals 0.  What if r1 starts at 0?  Then the first subtraction (which runs before we check for equality) will cause it to no longer equal 0, and it only goes down from there, so the program will run forever.  Lets fix that:
 
 	b loopcond
 	doing:
