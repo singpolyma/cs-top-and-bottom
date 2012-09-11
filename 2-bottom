@@ -46,6 +46,8 @@ Now we check the condition before starting the loop.  We could also write it lik
 
 This way, the subtractions and branch will never happen if r1 is equal to 0, and we have less branches happening (since we don't need to jump to the end to do the comparison).  This can matter because branch instructions cause CPUs to lose some of the smart things they do in order to go faster (because they suddenly are executing code from somewhere else than they might have expected).
 
+# TODO: Talk about pipelining here?  Later?  Earlier?
+
 So now we have a program that can do something to r0 based on r1.  What if we wanted to do this many times in our program?  Would we have to copy this code everywhere?
 
 Well, we can run this code from anywhere in our program (with `b doing`), but how would it get back to us?  Right now it would just keep running whatever instructions came next.
