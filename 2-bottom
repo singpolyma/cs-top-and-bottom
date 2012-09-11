@@ -1,5 +1,7 @@
 = Branches and Conditionals =
 
+# TODO: more about how a program is laid out in RAM
+
 So far the instructions we have seen only allow us to give the computer a fixed-size list of things to do.  Once all of the instructions have run, the program is done.  What if we wanted to do something simple like subtract 6 from r0 the number of times that are stored in r1?
 
 Well, first we will need a way to run instructions more than once.  To do this, we use the `b` instruction:
