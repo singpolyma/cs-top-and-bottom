@@ -8,7 +8,7 @@ When we talk about "instructions to the computer", really we mean instructions t
 
 Here is your first program:
 
-	mov r0, 42
+	mov r0, #42
 
 `mov` is the name of the instruction we are giving to the computer.  `r0` is the name of a register, and `42` is just the number forty-two.
 
@@ -16,7 +16,7 @@ What is a register?  Every CPU has one or more "slots" where they can store data
 
 If you run the above program, and then inspect the contents of register 0, you will see the number 42.  `mov` is the instruction that tells the computer to write a value into the a register.  The value can also be specified as a register to read from:
 
-	mov r0, 42
+	mov r0, #42
 	mov r1, r0
 
 Now both r0 and r1 are 42.
@@ -28,18 +28,18 @@ The values given to an instruction are often called "arguments" or "parametres".
 We can also add to a value:
 
 	mov r0, 30
-	add r0, r0, 12
+	add r0, r0, #12
 
 The `add` instruction takes the values from the second and third arguments, adds them, and puts the result into the register specified by the first argument.
 
 Of course, it doesn't matter what registers we use, as long as we are consistant:
 
-	mov r1, 30
-	add r1, r1, 12
+	mov r1, #30
+	add r1, r1, #12
 
 Now the value 42 is in `r1` instead of in `r0`.  We could also use `r1` while performing the computation, but put the result in `r0`:
 
-	mov r1, 30
-	add r0, r1, 12
+	mov r1, #30
+	add r0, r1, #12
 
 Now `r0` is 42 again.  Question: what is `r1`?  It's 30, because we wrote a 30 into it with `mov` and `add` only changed the value in `r0`.
