@@ -1,0 +1,75 @@
+= The Stack =
+
+So far we have operated only on registers, but of course there are a very small number of registers (15 on ARMv6) and each one is very small.  We have already said that the instructions for our program are being loaded from RAM by the CPU.  How can we store our data there as well?
+
+To interact with RAM we will nee two new instructions: `ldr` and `str`.  Addresses we pass to these instructions are always relative to the value in some register.  For example:
+
+	mov r0, #0
+	ldr r1, [r0, #0xf80]
+
+Will load whatever value is at the address 0xf80 into r1, and:
+
+	mov r0, #0
+	str r1, [r0, #0xf80]
+
+Will store whatever value is in r1 at the address 0xf80.
+
+Of course, in practise it is not safe to hard-code memory addresses into our code.  This is true for several reasons.  One is that not every computer has the same amount of RAM, and so not every possible address will exist on every computer.  Another reason is that other code in the program may be using the same location, and if one is not careful one can easily have two pieces of code fighting with each other.
+
+One possible solution to this is called "the stack".  A stack is a way of storing data such that we put pieces of data "next to each other" somehow (by having them adjacent in RAM, or by some other method) and then we only need to remember where the "top" element is.  We can read the "top" element, or possible some fixed number of elements on the "top" which we know are all present (depending on our implementation).  We can put another item "next" to the current "top" and change what we consider the "top".  The old "top" is not gone, but it is no longer at the same location relative to what we consider the "top".  This is called "pushing" an item onto a stack.  We can also move what we consider the "top" back down to a "lower" element, effectively removing the "top" element and resetting the "top" to what it used to be.  This is called "popping" and item off of a stack.
+
+If we store items adjacent in RAM, such that they have adjacent addresses, we can simply store the address of the current "top" item somewhere, and then to "push" and "pop" we can simply add or subtract the size of an item to this address that we are storing.  When we store an address in RAM somewhere in order to remember where we put something we call this a "pointer" because the address effectively "points" at the location where we put our data.
+
+So what is "the stack".  In most programs, we initialize some register to be a pointer to an address we have agreed with be the "bottom" of the stack, that is, the location of the first item we will push.  We do not change this register except for when we push or pop items, and so it serves as a way all the code in the program can agree on where to put data it is using right now.  The downside is that the data must be popped off the stack before code that uses earlier values is run again, because that code will expect its values to be on the top of the stack.
+
+Because this is such a common thing to do, ARMv6 has several instructions that can be used to implement the stack, and some nice names for the common ways to use these instructions.  Register 13 is given the nice name "sp" for "Stack Pointer", and the nice names for common stack implementations use this register for all of their operation.
+
+First we need to agree on where the bottom of the stack will go.  We will choose to put it at the very end of RAM (which means that the value in sp will actually *shrink* as we push items).  In our QEMU setup the largest address in RAM is 0x07FFFFFF.  So you might think we would want to do this:
+
+	mov sp, #0x07FFFFFF
+
+Unfortunately, this can not work.  The arguments to an instruction must be stored packed into the same space with that instruction in RAM, so that the CPU will load them all together.  The size of the space for each instruction on ARMv6 is 32 bits (that is, 4 bytes, which can store a number between 0x0 and 0xFFFFFFFF).  The number 0x07FFFFFF actually takes at least ceil(log(2,0x07FFFFFF)) = 27 bits (that is, 2^26 < 0x07FFFFFF < 2^27).  27 bits is very close to 32, and we haven't taken into consideration the space to encode the argument for Register 13 or the `mov` instruction itself yet!
+
+Luckily, the ARMv6 assembly language provides us with a nice solution to this problem:
+
+	ldr sp, =0x07FFFFFF
+
+This is actually a shorthand notation.  It places the 0x07FFFFFF into RAM right after the `ldr` instruction, and then loads from the address that represents the location just after the instruction (by looking in the pc register to know the address of the current instruction, and moving ahead to the next one).  This allows us to load any number that can be stored at a single address in RAM (which on ARMv6 is any number that can fit in 32 bits, which is any number < 2^32).
+
+Now that we have set the bottom of the stack, how do we push something on?  We can push one or more registers with the following instruction:
+
+	push {r1,r2,...}
+
+Any registers to be pushed must be listed in order (you can't push {r10, r2}) and they will all be written in the correct order on the top of the stack, and sp will be changed appropriately.  Similarly:
+
+	pop {r1,r2,...}
+
+Will pop a list of registers off of the stack.
+
+== Saving Register State ==
+
+Now to go back to our problem from last time: how can we create a reusable piece of code that uses whatever registers it wants when the code that calls it may have values it needs in those registers?
+
+We can simply push all of the registers onto the stack!  To modify our code from last time:
+
+	doing:
+		push {r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r13,r14}
+		sub r0, r0, #6
+		sub r1, r1, #1
+		cmp r1, #0
+		bne doing
+		pop {r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r13,r14}
+		b lr
+
+You will note that I did not push Register 15.  You will recall that r15 is the Program Counter (pc).  Changing the value in pc will cause the CPU to jump to another location in the code, which we achieve here using our branch instruction.  You will also note that I `pop` *before* I branch.  This is so that the value of Register 14 (lr) will be restored to its original value *before* we use it to branch.
+
+This code is very wasteful.  We push all of the registers onto the stack, but we only change r0 and r1!  Furthermore, how will we get data back to the code that called us if we restore all of the registers and pop anything we put on the stack?  In this case, let's say that we want the values we are going to operate on to be in r0 and r1, and that we will leave our final value in r0.  This means that r1 is the only register that we actually need to preserve:
+
+	doing:
+		push {r1}
+		sub r0, r0, #6
+		sub r1, r1, #1
+		cmp r1, #0
+		bne doing
+		pop {r1}
+		b lr
