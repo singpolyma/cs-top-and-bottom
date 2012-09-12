@@ -1,0 +1,70 @@
+= Normal Form =
+
+We talked before about having "targets" for our evaluation of programs in the Untyped Lambda Calculus.  Notionally, we should be trying to reduce any program to the "simplest" program, so that it can be interpreted as a "result".  If β-reduction is the tool we use to make a program "simpler", then what would the "simplest" program be?  It would be a program that cannot be β-reduced.  We say that such programs are in "β normal form", or sometimes just "normal form".
+
+For example, the following programs:
+
+	y
+	x
+	x y
+	(λx.x)
+	y(λx.x)
+
+Are all in beta normal form.  None of them have a possible beta-reduction (sometimes called a "reducible expression" or "redex").  The following programs are all *not* in beta normal form:
+
+	(λx.x)y
+	(λy.z)x
+	(λx.x)((λx.x)((λy.z)r))
+
+Not every program, however, has an equivalent program in normal form.  Consider for example the following program:
+
+	(λx.x x)(λx.x x)
+
+What happens after a single step of beta-reduction on this program?  We get:
+
+	(λx.x x)(λx.x x)
+
+Exactly the same thing we started with!  If you keep reducing this program, it will keep giving you back the exact same thing, and so it will never be reduced to beta normal form, because a further beta reduction is always possible.  We say that such programs "diverge".
+
+= Reduction Strategies =
+
+In order to reduce a program all the way to beta normal form (if possible), we want a strategy for choosing which applications to reduce.  Of course, we could always just pick one and reduce it (as we have done so far), but this can be hard to reason about and is certainly more difficult when it comes to building a machine to do it!  Let's consider this program:
+
+	(λx.x z)((λy.z)w)
+
+There are two possible beta-reductions here.  Either we can apply the left lambda abstraction to the whole argument on the right, or else we could first perform the application inside the argument on the right.  Intuitively, it seems like it might be easier to do the latter, since then each application that we do will be using the simplest possible form of the argument for substitution.
+
+	(λx.x z)((λy.z)w)
+	(λx.x z)z
+	z z
+
+That seems to work very well.  Reduce arguments to normal form, then apply them.  This strategy is called Applicative Order Reduction (or sometimes "rightmost innermost" because that is the expression we always choose to reduce) and modified forms of it are used to implement most programming languages.
+
+There is a potential problem with this strategy, however.  Consider the following program:
+
+	(λx.z)((λx.x x)(λx.x x))
+
+What will happen here?  We will choose to reduce the rightmost innermost expression to normal form before substituting it into the lambda abstraction on the right.  However, as we saw before, the expression we have here on the right diverges.  This means that it will never reach normal form.  We will keep trying to reduce it forever and never move on.  Is this a problem?  Perhaps the whole program diverges and so there is no normal form for the program.  Upon examination, we see that the program follows the following pattern:
+
+	(λx.z)(...)
+
+So no matter what we put in the `(...)`, the beta normal form of this program is:
+
+	z
+
+Because the lambda abstraction ignores its argument and `z` is always the result.  So Applicative Order Reduction is not guarenteed to always give us beta normal form, even if there is one.
+
+We might consider a different strategy.  If Applicative Order Reduction is rightmost innermost, what about leftmost outermost?  This strategy is called Normal Order Reduction.  Returning to our first example:
+
+	(λx.x z)((λy.z)w)
+	((λy.z)w)z
+	z z
+
+So we see that this strategy can produce the same results as Applicative Order Reduction, but does things in a different order.  Now what about our second example?
+
+	(λx.z)((λx.x x)(λx.x x))
+	z
+
+Because the leftmost outermost expression immidiately reduces to `z`, we never even look at the other expression, and so we get the correct beta normal form.
+
+It can be proved that Normal Order Reduction will *always* find beta normal form if one exists.
