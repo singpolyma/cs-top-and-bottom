@@ -38,13 +38,13 @@ There are two possible beta-reductions here.  Either we can apply the left lambd
 	(λx.x z)z
 	z z
 
-That seems to work very well.  Reduce arguments to normal form, then apply them.  This strategy is called Applicative Order Reduction (or sometimes "rightmost innermost" because that is the expression we always choose to reduce) and modified forms of it are used to implement most programming languages.
+That seems to work very well.  Reduce arguments to normal form, then apply them.  This strategy is called Applicative Order Reduction (or sometimes "leftmost innermost" because that is the expression we always choose to reduce) and modified forms of it are used to implement most programming languages.
 
 There is a potential problem with this strategy, however.  Consider the following program:
 
 	(λx.z)((λx.x x)(λx.x x))
 
-What will happen here?  We will choose to reduce the rightmost innermost expression to normal form before substituting it into the lambda abstraction on the right.  However, as we saw before, the expression we have here on the right diverges.  This means that it will never reach normal form.  We will keep trying to reduce it forever and never move on.  Is this a problem?  Perhaps the whole program diverges and so there is no normal form for the program.  Upon examination, we see that the program follows the following pattern:
+What will happen here?  We will choose to reduce the leftmost innermost expression to normal form before substituting it into the lambda abstraction on the far left.  However, as we saw before, the innermost expression we have here diverges.  This means that it will never reach normal form.  We will keep trying to reduce it forever and never move on.  Is this a problem?  Perhaps the whole program diverges and so there is no normal form for the program.  Upon examination, we see that the program follows the following pattern:
 
 	(λx.z)(...)
 
@@ -54,7 +54,7 @@ So no matter what we put in the `(...)`, the beta normal form of this program is
 
 Because the lambda abstraction ignores its argument and `z` is always the result.  So Applicative Order Reduction is not guarenteed to always give us beta normal form, even if there is one.
 
-We might consider a different strategy.  If Applicative Order Reduction is rightmost innermost, what about leftmost outermost?  This strategy is called Normal Order Reduction.  Returning to our first example:
+We might consider a different strategy.  If Applicative Order Reduction is leftmost innermost, what about leftmost outermost?  This strategy is called Normal Order Reduction.  Returning to our first example:
 
 	(λx.x z)((λy.z)w)
 	((λy.z)w)z
