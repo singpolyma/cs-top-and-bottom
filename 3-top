@@ -67,4 +67,4 @@ So we see that this strategy can produce the same results as Applicative Order R
 
 Because the leftmost outermost expression immidiately reduces to `z`, we never even look at the other expression, and so we get the correct beta normal form.
 
-It can be proved that Normal Order Reduction will *always* find beta normal form if one exists.
+It can be proved that Normal Order Reduction will *always* find beta normal form if one exists.  It can also be proven that any reduction strategy we use on a particular program will result in the same normal form expression, unless it fails to find a normal form expression at all.
