@@ -1,0 +1,134 @@
+We have now covered all of the buildings blocks of the Untyped Lambda Calculus and how we can reason about expressions and reduce them to the "simplest" form: beta normal form.
+
+Let's move now to looking at how we would go about modelling simple things in the Untype Lambda Calculus, based on what we know.
+
+== Boolean Algebra ==
+
+One thing that comes up often as part of Computer Science is Boolean Algebra.  Boolean Algebra deals with the values True and False and ways of combining them and reasoning about them.  It is also closely related to Propositional Logic and Predicate (first-order) Logic.  Consider the following English description of a problem:
+
+	If the box is on the top shelf and red, then it will have my book in it, otherwise I don't know what is in it.
+
+This seems relatively straightforward.  We ask two questions about the box ("Is it on the top shelf?" and "Is it red?"), and we provide two possible conclusions based on the answers.  Let's first examine the questions.  Say we knew that the box is not of the top shelf, but is red, then what do we know?  We know that it is not both on the top shelf and red.  In fact, the redness of the box does not even matter, because if it is not on the top shelf then it cannot possibly be both of those things!  Let's make a list of the possibilities:
+
+	TopShelf? | IsRed? | Both?
+	--------------------------
+	Yes       | Yes    | Yes
+	No        | Yes    | No
+	Yes       | No     | No
+	No        | No     | No
+
+Now, this may seem pretty obvious.  Of *course* the answer to both questions is not "Yes" unless both questions have an answer of "Yes".  That's just what "both" means.  We we have in that table (called a "truth table") is a precise definition of "bothness", which in Boolean Algebra we call "conjunction" or "and" with common representations being "∧" or "&&".  Let's rewrite our truth table:
+
+	X | Y | X ∧ Y
+	--------------
+	T | T | T
+	F | T | F
+	T | F | F
+	F | F | F
+
+Since this table lists all of the possible values X or Y could have (assuming that all of the possible answers are True and False), we can use it as a definition for ∧, and we will always be able to agree on the meaning of an expression.  So if I write:
+
+	(X ∧  Y) ∧ Z
+
+Then you know for this to be True, X, Y, and Z *all* have to be True.  Why?  Well, because for (X ∧ Y) to be true then X and Y both have to be True, and for (...) ∧ Z to be True, (...) and Z both have to be True.  So X, Y, and Z all have to be True.
+
+So, that's "and".  What if we wanted "or"?  Well, it turns out there are two possible definitions for "or" in English:
+
+	X | Y | X ∨ Y
+	--------------
+	T | T | T
+	T | F | T
+	F | T | T
+	F | F | F
+
+	X | Y | X ⊻ Y
+	--------------
+	T | T | F
+	T | F | T
+	F | T | T
+	F | F | F
+
+The first table is called "disjunction" or "inclusive or" and we will use it for "or".  A disjunction is True if either side is True.  This is what we want in our case (If the box is on the top shelf or it is red ...).  Common representations of disjunction include "∨" and "||".
+
+The second table is called "exclusive disjunction", "exclusive or", or "xor".  An xor is True if one side is true, but not if both are (It is going to rain or snow).  Common representations of xor include "⊻" and "⊕".
+
+What if we wanted to say "If the box is not red ..."?  This is called "negation" or "not".  Common representations include "¬" and "!":
+
+	X | ¬X
+	--------------
+	T | F
+	F | T
+
+Negation simply reverses the truth value of whatever you hand it.
+
+== Church Encoding of Boolean Algebra ==
+
+The Untyped Lambda Calculus does not have a built-in system for boolean algebra.  We have already seen everything that it has.  How will we encode something even this powerful in something so simple?  It turns out to be suprisingly easy, and is a good first step in thinking about how to model more complex ideas.
+
+First we need to somehow represent True and False.  Well, what do we actually want to *do* with these True or False value?  Recall our initial example:
+
+	If the box is on the top shelf and red, then it will have my book in it, otherwise I don't know what is in it.
+
+The Boolean Algebra let us talk about the *questions* and the way that they combined to form a single truth value, but what we really care about are the *conclusions*.  A True answer to the question should give one conclusion, and a False answer should give the other.  We have seen lambda abstractions which return their arguments, and also ones which ignore their arguments:
+
+	(λx.x)
+	(λx.y)
+
+Now consider this lambda abstraction:
+
+	(λx.(λy.x))
+
+One step of beta-reduction here would give us back a lambda abstraction that ignores its argument and returs whatever we applied the outer lambda abstraction to.  For example:
+
+	(λx.(λy.x))a
+	(λy.a)
+
+So, if we perform two applications to this lambda abstraction, we will always get the first thing we applied it to:
+
+	((λx.(λy.x))a)b
+	(λy.a)b
+	a
+
+This seems like exactly the sort of behaviour we'd expect from True.  It takes two possible conclusions and returns the first one.  False just gives us a lambda abstraction that returns its argument:
+
+	((λx.(λy.y))a)b
+	(λy.y)b
+	b
+
+Exactly what we want.
+
+What about the combining operations from the Boolean Algebra?  Can we model those?  Consider conjunction.  We want to return a True value in only one case: when both values are True.  So, if the first value is True then the expression is only True if the second value is True.  If the second value is not True then the second value will be False, which is the value we would want for the whole program in that case.  We can think of it this way:
+
+	if X, then Y, otherwise False
+
+Even simpler, though, if X is not True, then it is False, which is what we want as the value of the whole program in *that* case:
+
+	if X, then Y, otherwise X
+
+Which can be written fairly simply in the Untyped Lambda Calculus as:
+
+	(λx.(λy.(x y) x))
+
+The conclusion is `y` when `x` is True (because that is how we defined our encoding of True to operate), and is `x` otherwise.  For example:
+
+	((λx.(λy.(x y) x)) (λx.(λy.x))) (λx.(λy.x))   -- Note that this is ((AND TRUE) TRUE)
+	(λr. ((λx.(λy.x)) r) (λx.(λy.x))) (λx.(λy.x)) -- (λr. (TRUE r) TRUE) TRUE
+	((λx.(λy.x)) (λx.(λy.x))) (λx.(λy.x))         -- (TRUE TRUE) TRUE
+	(λr. (λx.(λy.x))) (λx.(λy.x))                 -- (λr. TRUE) TRUE
+	(λx.(λy.x))                                   -- TRUE
+
+You can work through reductions for other expressions if you are not yet convinced that this works.
+
+A similar reasoning will serve us for disjunction.  If the first value is True, then the entire disjunction is True.  If the first value is False then the entire disjunction depends on the other value.  So:
+
+	if X, then X, else Y
+
+Which can be written in the Untyped Lambda Calculus as:
+
+	(λx.(λy.(x x) y))
+
+Negation is a bit different, because it only deals with a single truth value.  What does a negated value represent?  Well, compared to the original value, it will treat conclusions in an opposite way.  That is, if the original value would have returned conclusion 1, the negated value will return conclusion 2, and vice versa.  What if we just made conclusion 1 appear to the original as conclusion 2?  What we need is a lambda abstraction which reverses the order of a pair of applications:
+
+	(λv.(λx.(λy.(v y) x)))
+
+You can see that we take in some original value (bound to `v`), and we eventually apply it twice, but in the opposite order that we were applied.  So we have reversed the order of the applications, and thus we have reversed which conclusion we will get.
