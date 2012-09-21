@@ -1,0 +1,51 @@
+== Pointers ==
+
+The stack is very useful, but what if we wanted to access some chunk of RAM from earlier in the program?  Of course, it will still be on the stack, but how far back from where we are?  Depending on the route we took, it could be arbitrarily far back on the stack.  So how can we access it?
+
+We talked about the idea of a pointer breifly when we introduced the Stack Pointer.  A pointer is just a register or memory location that contains the address of another memory location.  For example, `sp` contains the address of the current top of the stack.
+
+So, say we had a chunk of RAM, and we wanted to give some code we are calling access to it.  We could, by convention, say that we will use register 0 to pass data into code we call, and then place the address there, like so:
+
+	# Put some values on the stack
+	mov r3, #3
+	mov r4, #4
+	mov r5, #5
+	push {r3,r4,r5}
+	# Make r0 "point" at the top of the stack
+	mov r0, sp
+	# Call some_code
+	bl some_code
+
+Now in `some_code` we can access those values, like so:
+
+	some_code:
+		ldr r3, [r0, #0x0]
+		ldr r4, [r0, #0x4]
+		ldr r5, [r0, #0x8]
+
+== Pointer Arithmetic ==
+
+What if we don't know how many items we want to access?  We could also pass in a number of items, but then how would we get at them?
+
+Well, an address in RAM is really just a number.  Items next to the first item will have addresses next to the first address.  So we can do arithmetic to find our other items.  Say we have a pointer in r0 and a number of items in r1.  We want to take each item and add it to r3, then end up with the final value in r0.
+
+	sum_it_up:
+		cmp r1, #0
+		beq done_sum_it_up
+		# Load the current item into r4
+		ldr r4, [r0, #0x0]
+		# Add the value to r3
+		add r3, r3, r4
+		# Increment r0 to look at the next item
+		add r0, r0, #0x4
+		# Decrement r1 to keep track of how many are left
+		sub r1, r1, #1
+		b sum_it_up
+	done_sum_it_up:
+		mov r0, r3
+
+This pattern of iterating through a block of RAM is very common.  If it is a linearly organised block, like this one, we often call it an array.
+
+== The Heap ==
+
+What if we want to grab a chunk of RAM and then return a pointer to it?  Currently, we cannot do this, because everything we put on the stack needs to be popped off before we return.  We could just pick a chunk of RAM, but how will we know that no other program or procedure uses that chunk?  In practise we need some code that manages all the RAM that can be allocated in this way, and knows who is using what.  The RAM that can be allocated in this way is usually called The Heap.  The Heap, and most other communication with hardware, is managed by a program called the Operating System.  We are currently running our assembly code without an Operating System (also called "unhosted" or "bare-metal").  We will thus revisit The Heap later, when we have an Operating System around to manage it for us.
