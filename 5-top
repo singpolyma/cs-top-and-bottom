@@ -1,0 +1,117 @@
+== Church Numerals ==
+
+Let's think about how to deal with something a little more complex: numbers.  What kind of numbers?  We will stick to Natural Numbers (that is, whole numbers 0 and up).
+
+As with conditionals and Boolean Algebra, we start with a discussion of the nature of the Natural Numbers.  How would we describe the set of all Naturals?  As above, we say that they are the whole numbers 0 and up.  So it seems that we will need to encode 0 somehow.  As for the "and up" part, how can we describe that?
+
+Let's think about a different description of the Naturals:
+
+	0, 1, 2, 3, 4, 5, ...
+
+We cannot, of course, enumerate all of the Naturals because there are infinitely many of them, but we informally seek to give an intuition about them by showing how they follow one after the other.  So we need some way to describe this concept of "following one after the other".  We need some function S where (S n) gives the Natural which "follows" some Natural n.  Our above list becomes:
+
+	0, S 0, S (S 0), S (S (S 0)), S (S (S (S 0))), S (S (S (S (S 0)))), ...
+
+This is starting to look like something we can represent, but what will we use in the Untyped Lambda Calculus for 0 and S?  As before, let's think about what it might be useful to use such numbers for.  One use you might see in the list above is to run some function repeatedly some number of times.  In that case, 0 and S are more useful as parametres:
+
+	λs.λz. z
+	λs.λz. s z
+	λs.λz. s (s z)
+	λs.λz. s (s (s z))
+	λs.λz. s (s (s (s z)))
+	λs.λz. s (s (s (s (s z))))
+
+== Addition ==
+
+We need to be able to do arithmetic with these numbers, or they're not very useful.  Can we do addition?  The result of the addition of two naturals is going to have S applied all of the times from one of the numbers on top of the other:
+
+	λs.λz. s (s z)             -- 2
+	λs.λz. s (s (s z))         -- 3
+	λs.λz. s (s (s (s (s z)))) -- 2 + 3 = 5
+
+We begin with the following lambda abstraction:
+
+	λn. (λs.λz. (n s z))
+
+This lambda abstraction will take a value `n` (which we wish to be a Natural) and produces a Natural.  If `n` is a natural and we apply it to `s` and `z` then what do we get?  We get `s` applied to `z` `n` times.  If `s` and `z` are just taken in by a new abstraction that represents a Natural (as here), then we just get back an identical value to `n`.  So the following function:
+
+	λn. (λs.λz. s (n s z))
+
+Is actually the Untyped Lambda Calculus encoding of S.  It takes in a Natural, and produces the Natural that has `s` applied to `z` one more time than `n` did.  For addition, however, we want to apply `s` to `z` some `m` more times:
+
+	λm.λn. (λs.λz. m s (n s z))
+
+Here we apply the Natural `m` to some `s`, just as we did before with `(n s z)`, however instead of passing `z` for the 0-value, we pass `(n s z)` itself.  So, `m` will apply `s` to `(n s z)` `m` times, exactly as required for addition.  So, this is our representation of addition.
+
+== Multiplication ==
+
+Multiplication of naturals is normally defined in terms of repeatedly adding a number:
+
+	2 * 3 = 2 + 2 + 2
+
+If we think of the structure of our Naturals:
+
+	(S (S (S 0))) -- 3
+
+You could choose to think of S as the more complex operation `(+1)`:
+
+	((+1) ((+1) ((+1) 0))) -- 1 + 1 + 1 + 0 or (1 * 3) + 0
+
+That almost looks like multiplication!  And since the only difference is a (+0), which will not affect our result, we can in fact treat it as such:
+
+	((+2) ((+2) ((+2) 0))) -- 2 + 2 + 2 + 0 or (2 * 3) + 0
+
+So it seems like if we can just replace S in our Naturals with addition of some number, we will get multiplication.
+
+	λm.λn. (λs.λz. m (λx. n s x) z)
+
+Here we take in two Naturals and produce a Natural.  We apply `m` to something and to `z`, thus effectively replacing S with some other function.  In this other function, we simple apply `n` to `s` and `x`.  `s` is just the successor of the Natural we are producing, but what is `x`?  It is the "rest" of the number.  Recall:
+
+	(S (S (S 0)))
+
+For the innermost S `x` would be 0, for the next it would be `(S 0)`, and for the outermost it would be `(S (S 0))`.  So with:
+
+	(λx. n s x)
+
+We are applying `s` to `x` `n` times (effectively adding `n` to `x`), and then this whole function is applied `m` times:
+
+	m (λx. n s x) z
+
+Making the whole thing exactly our function which adds `n` to `z` `m` times, which is our definition of multiplication:
+
+	λm.λn. (λs.λz. m (λx. n s x) z)
+
+== Predecessor ==
+
+What about subtraction?  Well, conceptually subtraction is very simple:
+
+	λm.λn. n P m
+
+Where P is some function that is the inverse of S, that is, it takes the predecessor of its argument.  Things get a little weird around 0, since 0 has no predecessor, so we'll just say that (P 0) = 0.
+
+We expect P here to take a Natural in our encoding.  `n P m` will apply P to `m` `n` times, which is that it will subtract 1 `n` times from `m`, which will result in `m` being `n` smaller, which is the definition of subtraction.
+
+How will we build this predecessor function, though?  We start with a somewhat strange program:
+
+	n (λg.λh. h (g s)) (λx. z)
+
+If we take `n` to be a Natural, then what does this mean?  We are replacing S in our number with a function that produces another function!
+
+	S (S 0)
+	(λh. h ((λh. h (0 s)) s))
+
+This explains why our 0 value is also a function:
+
+	(λh. h ((λh. h ((λx. z) s)) s))
+
+So, at each layer we're appyling some function `h` to the inner program.  What is `h`?  Well, you can see that at the inner layer is it `s`.  This starts to look very much like the structure of a Natural, repeatedly applying some function to some inner value.  The big difference comes at the innermost value, where instead of applying `s` to `z` we simply ignore `s` and produce `z` directly.  So we repeatedly apply some function to a value at every layer except on, reducing the number of applications by one!  The outer layer, however, still needs to be applied to some function to get the value out.  We will use the handy `(λx.x)` for this.  Adding the right outer abstractions to take in a Natural and produce a Natural we get:
+
+	λn. (λs.λz. (n (λg.λh. h (g s)) (λx. z)) (λx. x))
+
+== Predicates ==
+
+It will prove useful to be able to check properties of numbers, such as equality.  We will not bother here to develop all the useful predicates, but just the simplest one: a test for zero.
+
+	λn. n (λx. (λx.λy.y)) (λx.λy.x) -- λn. n (λx. FALSE) TRUE
+
+We use our encodings for True and False here again.  We take in a Natural and produce a Boolean.  `n` is applied to the constant function that ignores its argument and returns False, and to True.  So the 0-value is True, which means that if `n` is 0 then it will apply the first argument to this value 0 times (that is, it will simply return the 0-value), and so we will get 0, just like we want.  If `n` is anything other than 0, it will apply the function that produces False some number of times.  Since this function ignores its argument, then as long as it is applied at least once, the whole thing will produce False.  So this lambda abstraction takes a Natural and produces True if it is 0 and False otherwise, as required.
