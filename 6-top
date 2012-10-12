@@ -1,0 +1,73 @@
+= Factorials and Fixed-point Combinators =
+
+Now that we have some basic building-block abstractions under our belt, it's time to look at implementing a more useful algorithm.  We will consider a function for computing factorials.  You may recall from arithmetic that a factorial is defined as the product of all the numbers from some n down to 1.  The factorial of 0 is defined to be 1.
+
+How can we go about modeling this sort of problem?  One common approach is to try breaking the problem down into smaller problems we can more easily solve.  This is often called "divide and conquer".  If you consider the factorial of the number 5:
+
+	5(4(3(2(1))))
+
+The use of parenthesis to specify multiplication immidiately suggests a smaller problem that needs to be solved first:
+
+	4(3(2(1)))
+
+Which is the factorial of 4.  It in turn needs to first have solved:
+
+	3(2(1))
+
+Which is the factorial of 3.  In general, if you consider the factorial of any number, it is the factorial of the number one less than it, multiplied by the number itself.  Zero is a special case, since the factorial of 0 is 1.  An initial attempt in the Untyped Lambda Calculus might look like this:
+
+	λn. ISZERO n ONE (MULT n (FACT (PRED n)))
+
+When `ISZERO` is our 0-test predicate from before, `(ISZERO 0)` will produce our encoding of True, which returns its first argument.  So:
+
+	ISZERO n ONE …
+
+Says that when `n` is 0 we should produce ONE (which should be our encoding of the Natural 1, `(λf.λx. f x)`).
+
+	FACT (PRED n)
+
+Says that we should compute the factorial of the number one less than `n`.  So:
+
+	MULT n (FACT (PRED n))
+
+says we should multiply said factorial by `n`.  All together, then, this definition says that we should produce the factorials all the way down to 0, and the factorial of 0 will be 1.
+
+There is a problem with this definition, however.  Let's expand the expression and get rid of the shorthands (wrapped onto multiple lines for readability):
+
+	λn.
+		(λn. n (λx. (λx.λy.y)) (λx.λy.x)) n (λf.λx. f x)                 -- ISZERO n ONE
+			((λm.λn. (λs.λz. m (λx. n s x) z)) n                          -- MULT n
+				((???)                                                     -- FACT
+					(λn. (λs.λz. (n (λg.λh. h (g s)) (λx. z)) (λx. x)) n))) -- PRED n
+
+A problem becomes apparent.  We have definitions for all of these shorthands, except FACT.  What is FACT?  It is the factiorial.  But the factorial is what we are trying to implement!  How can we implement a function in terms of itself (also called a recursive function)?
+
+You may recall from before the expression:
+
+	(λx. x x)(λx. x x)
+
+This program never reaches a normal form because at each step of beta reduction it is replaced with itself.  So it is possible for a program to produce itself.  If that is possible, perhaps we could get the program to produce itself and feed that in as another parameter.  We certainly can build a version of the factorial function that expects itself as a parameter:
+
+	λf.λn. ISZERO n ONE (MULT n (f (PRED n)))
+
+Now we just need some lambda abstraction that, when applied to this abstraction, will produce it applied to itself.  There are many such functions (called fixed-point combinators), the most famous of which is the Y combinator:
+
+	λf. (λx. f (x x)) (λx. f (x x))
+
+This looks eerily similar to `(λx. x x)(λx. x x)`.  Let's see what happens when we reduce it a few steps:
+
+	(λf. (λx. f (x x)) (λx. f (x x))) g
+	(λx. g (x x)) (λx. g (x x))
+	g ((λx. g (x x)) (λx. g (x x)))
+	g (g ((λx. g (x x)) (λx. g (x x))))
+
+It seems like this function also does not have a normal form.  It will continue to apply g to itself applied to itself forever.  Let's see this used with our factorial function (shorthand PFACT):
+
+	...
+	(λf.λn. ISZERO n ONE (MULT n (f (PRED n)))) ((λx. PFACT (x x)) (λx. PFACT (x x)))
+	λn. ISZERO n ONE (MULT n (((λx. PFACT (x x)) (λx. PFACT (x x))) (PRED n)))
+	λn. ISZERO n ONE (MULT n ((PFACT ((λx. PFACT (x x)) (λx. PFACT (x x)))) (PRED n)))
+
+Each instance of PFACT is going to get applied to the infinite chain being produced as a result of the Y combinator, but then because we choose to reduce the outermost reducible expression the result will then get applied to `(PRED n)` *before* the infinite chaing being produced continues.  When `(PRED n)` reaches 0, then ISZERO test in PFACT will cause that particular PFACT to produce ONE, and most importantly, to ignore its first parameter (which is only used in the case that ISZERO is False).  This will halt the infinite expansion and the entire expression will be able to be reduced from there.
+
+The Y combinator, and other fixed-point combinators, will work in this way to solve any "recursive" lambda abstraction that is written to expect itself as the first argument.  It will actually get sent a conceptually infinite chain of itself applied to itself, but will be able to reach normal form if the lambda abstraction has a so-called "base case" or "exit case", that is, a condition under which it ignores its first parameter and produces something.
