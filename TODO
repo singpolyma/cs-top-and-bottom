@@ -4,3 +4,22 @@ Talk to serial port in assembly
 Recursion example in assembly (mention tail recursion)
 
 Talk about IO?
+
+== Haskell ==
+
+* Repeat the factorial.  Y combinator does not type.  Use Data.Function.fix.  Talk about named functions and recursion.
+* Talk about modularity and imports.  Import lists, export lists.
+* Types and typing.  Algebraic datatypes.
+* Merge sort and algorithm analysis
+* map, fold, other common pattern
+* Type classes, Functor, Applicative functor
+* Monad
+
+== C ==
+
+* Repeat the factorial.  We cannot do tail call elimination in C.  Do the transform to a while loop.
+* Standard library and memory management (heap vs stack).  Simple IO and talking to the OS (syscalls).  Memory protection.
+* Arrays as pointers with pointer arithmetic.  Bounds checking (counting and terminators).  Structs/unions.
+* Linked list, doubly, circular
+* iterator, function pointer, macros, binary search
+* Reference counting
