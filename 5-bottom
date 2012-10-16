@@ -1,0 +1,80 @@
+= Talking to a Serial Port =
+
+Since we are, for now, in an unhosted environment without an Operating System, we might as well try talking to some hardware directly.  Different computers will have different ways of talking to different kinds of hardware (which is where a lot of OS complexity comes from), but we will simplify our lives and assume the code is running on exactly the hardware that our QEMU environment emulates.
+
+Additionally, we will restrict ourselves to communicating with one of the simplest kinds of hardware: a serial port.  Some of you have maybe never seen a real serial port, but it's just a (rather slow) way to either send or receive a stream of bytes.  By default, QEMU will tie the primary serial port of the emulated system to the terminal where you run it, so sending bytes to the serial port will allow us to print in the terminal.
+
+== Sending one byte ==
+
+The way our particular system lets us talk to the serial port is by accessing a particular memory address.  We use the same `ldr`/`str` instructions for this as for RAM, but the particular address we use will access the serial port instead of RAM.  To write, for example, the letter 'a':
+
+	ldr r0, =0x101f1000
+	str #0x61, [r0, #0]
+
+To do anything with text (or anything else, for that matter!) in a computer, we need to represent it as a set of bytes.  The most common way of representing (encoding) text in a computer is called UTF8.  0x61 is a hexadecimal number represents the byte that UTF8 uses to represent the letter 'a'.  We write this byte into the memory address 0x101f1000, which QEMU has mapped to our serial port, and the letter 'a' appears in our terminal.
+
+== Sending two bytes ==
+
+Now what if we want to print 'a' and then 'b'?  You might be tempted to write this:
+
+	ldr r0, =0x101f1000
+	str #0x61, [r0, #0]
+	str #0x62, [r0, #0]
+
+And on QEMU that will probably work.  On a real computer, however, that would not be a good idea.  That's because a serial port is much slower than the CPU, and so we might try to write another byte before the first one is done being sent.  There are many solutions to this problem, but the easiest one is just to loop until the serial port is ready:
+
+	ldr r0, =0x101f1000
+	str #0x61, [r0, #0]
+
+	ldr r4, =0x101F1006
+wait:
+	ldr r5, [r4, #0]
+	tst r5, #0x20
+	bne wait
+
+	str #0x62, [r0, #0]
+
+This code uses a new instruction, `tst`, which performs a bitwise AND and changes the value that the CPU uses for conditional execution of instructions.  What is a bitwise AND?  Well, it's very similar to the AND operation from the boolean algebra, but it operates on bits.  For example:
+
+	111 & 111 = 111
+	000 & 111 = 000
+	010 & 110 = 010
+
+So the resulting bit is 1 if both bits in the same position were 1, and 0 otherwise.  `tst` will perform this operation, and then instructions with `ne` on the end will only run if the result was not all 0s.  In this case we're using it with 0x20.  What does that do?  0x20 is 00100000 in binary, so the result will be all 0s unless the 3rd-highest bit of the byte we're comparing against is a 1.  This sort of technique is called a "bit mask".  Essentially, each bit of the number we load from 0x101F1006 represents some sort of True or False value.  We only care about one of these values, so we "mask" it off.  The value we get is documented to be the bit that will be set if the serial port is busy sending, so if we wait until it is 0 we will be sure the serial port is ready before we send the next byte.
+
+== Sending a whole string ==
+
+Just for good measure, let's write a reusable chunk of code that we can jump into to print any string of characters.  This code will assume that the address of the first character is in r0, that there are no 0s in the string, and that there will be a 0 after the end of the string.  You'll note that we've seen blocks of RAM similar to this before: this is a linearly packed block of RAM, also called an array.
+
+	print:
+		push {r3, r4, r5}   # Save registers we overwrite
+		ldr r3, =0x101f1000 # The address of the serial port
+		ldr r4, =0x101F1006 # The address of the information about the serial port
+	wait:
+		ldr r5, [r4, #0]    # Check serial port information ("flags")
+		tst r5, #0x20       # Bit mask
+		bne wait            # Keep waiting?
+
+		ldr r5, [r0, 0]     # Get the next byte
+		str r5, [r3, #0]    # Write that byte
+		add r0, r0, #1      # Increment pointer by 1 byte
+
+		cmp r0, #0x0        # Is this byte a 0?
+		bne wait            # If not, go wait again
+
+		pop {r3, r4, r5}    # Restore registers
+		b lr                # Return to caller
+
+== Interlude about the top ==
+
+We've been working for awhile now in both ARMv6 assembly and the Untyped Lambda Calculus.  It seems like most programs in one language (instructions to the computer) could be translated into the other (description of an algorithm), but what about controlling hardware?  At some point, we're going to want to send a byte over a serial port, or draw on the screen, or something.  Isn't that always going to be in the class of "instructions to the computer"?
+
+Well, yes.  The Untyped Lambda Calculus, specifically, does not even have a generally-accepted way to write programs that control hardware.  So are we doomed to write out specific instructions?  Not at all.  There are several ways to solve this problem that are worth considering.
+
+The messiest, but the most obvious, might be to extend the Untyped Lambda Calculus to have some additional features that involve mixing in some instructions to the machine with our algorithms.  This sort of combination is often called "imperative programming".
+
+Another way might be to have a lambda abstraction which gets "called" by the computer with a parametre representing the computer hardware, and allowing applications of this parametre in different ways to result in different forms of hardware control.
+
+Probably the cleanest way would be to have a lambda abstraction wich gets "called" by the computer, and which produces as its result an encoding of what operations the program needs the harware to do.
+
+All three of these strategies exist in real programming languages, and we will see more about some of them later.
