@@ -1,0 +1,74 @@
+= Factorials = 
+
+Let's now put together some of what we know to implement a factorial computation in assembly.  We can simulate recursion by "calling" a reusable piece of code from inside itself:
+
+	factorial:
+		push {r4,lr}   # Save registers we're going to use
+
+		cmp r0, #0     # Is the argument in r0 a 0?
+		moveq r0, #1   # If so, return a 1 in r0
+		beq done       # Go cleanup
+
+		mov r4, r0     # Save r0, we need to use it as the argument to ourselves
+		sub r0, r0, #1 # r0 - 1 is the new argument
+		bl factorial   # Call ourselves
+		mul r0, r4, r0 # Return value is in r0, add it to r4 and return in r0
+
+	done:
+		pop {r4,lr}    # Restore registers
+		b lr           # Return to caller
+
+If you set `r0` to a value and then `bl factorial` you will end up with the factorial of that number back in `r0`.  You can see how we use `bl factorial` right inside this implementation to simulate recursion.  We have to push `r4` because we use it for temporary values and we have to push `lr` because it gets set by `bl`.
+
+Keen observers, however, may have noticed an inefficiency in this implementation.  Every time we `bl factorial` two more values get pushed onto the stack.  We don't pop any values off the stack until the entire computation is done.  We are using potentially a lot of RAM to store intermediate values that just get thrown out at the end.  Unfortunately, as it is, we need these values, because when an internal "call" to factorial returns we need our `r4` back so that we can do the multiplication with it.  We cannot do the multiplication earlier, because we need the return value from the "call" to factorial.
+
+== Tail calls ==
+
+We can solve this be restructuring the code to use what is called a "tail call", that is, we need to structure the code such that all we do with the return value of the "recursive call" is return it.  In this case we can do that by passing an "accumulator" to the next step.  This code expects that `r0` is the number to compute the factorial of and `r1` is the value so far (which should be 1 on the first call):
+
+	factorial:
+		push {lr}      # Save registers we're going to use
+
+		cmp r0, #0     # Is the argument in r0 a 0?
+		moveq r0, r1   # If so, return the value so far in r0
+		beq done       # Go cleanup
+
+		mul r1, r1, r0 # Multiply value so far by current value and pass as r1
+		sub r0, r0, #1 # r0 - 1 is the new first argument
+		bl factorial   # Call ourselves
+		# Return value is in r0, and it is the value we want to return,
+		# so leave it there
+
+	done:
+		pop {lr}       # Restore registers
+		b lr           # Return to caller
+
+This version still grows the stack at each step, but now we don't need any values back except for the address of where to return to.
+
+== Tail call elimination ==
+
+Every tail call can be "eliminated" by replacing it with something that does not grow the stack.  If you look at the example above, the only information we save is the address of where to return, but all we do on return is return again.  So, eventually, we will have popped the whole stack and return to the original caller.  So, why not return all the way up in the first place?
+
+	factorial:
+		cmp r0, #0     # Is the argument in r0 a 0?
+		moveq r0, r1   # If so, return the value so far in r0
+		beq lr         # lr was never modified, we return to the original caller
+
+		mul r1, r1, r0 # Multiply value so far by current value and pass as r1
+		sub r0, r0, #1 # r0 - 1 is the new first argument
+		b factorial    # Call ourselves, but don't save the return location
+
+By replacing `bl factorial` with `b factorial` we can keep the original value of `lr` all the way down to the last step, and then at the last step we already know the complete answer (because we've been "accumulating" the answer so far) and so we can just return it to the original caller.  To prevent the original caller from needing to call this any differently from the original version, we can write a small wrapper to set `r1` to 1:
+
+	dofactorial:
+		push {lr}
+		mov r1, #1
+		bl factorial
+		pop {lr}
+		b lr
+
+You may observe that this, too, is a tail call, even though no real recursion simulation is going on.  So we can eliminate it as well:
+
+	dofactorial:
+		mov r1, #1
+		b factorial

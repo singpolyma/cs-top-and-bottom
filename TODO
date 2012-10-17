@@ -1,7 +1,5 @@
 Lots of things.  Some I've thought of:
 
-Recursion example in assembly (mention tail recursion)
-
 == Haskell ==
 
 * Repeat the factorial.  Y combinator does not type.  Use Data.Function.fix.  Talk about named functions and recursion.
