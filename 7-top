@@ -1,0 +1,11 @@
+= Haskell =
+
+Now that we've covered a whole lot of material in the Untyped Lambda Calculus, it's time to move on to something a bit more expressive.  More expressive does not mean we can do more, but that an equivalent program can often be considerable shorter and easier to read.  We will also choose to move to something that lives a little bit closer to the machine.  There are many suitable languages, but we will choose Haskell.
+
+# TODO: external material on setting up GHC/GHCI
+
+We will not attempt to cover all of the syntax of Haskell at once, but a good start might be to build our factorial implementation in Haskell.  Fire up GHCI and try the following:
+
+	Data.Function.fix (\f n -> if n == 0 then 1 else n * (f (pred n))) 5
+
+There are a lot of new things here, but you might already be getting a sense of how Haskell is more expressive.  For one thing: it supports numbers directly!  Multiplication, predecessor, and testing for 0 are all supported right in the language.
