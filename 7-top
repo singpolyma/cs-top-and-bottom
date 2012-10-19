@@ -9,3 +9,112 @@ We will not attempt to cover all of the syntax of Haskell at once, but a good st
 	Data.Function.fix (\f n -> if n == 0 then 1 else n * (f (pred n))) 5
 
 There are a lot of new things here, but you might already be getting a sense of how Haskell is more expressive.  For one thing: it supports numbers directly!  Multiplication, predecessor, and testing for 0 are all supported right in the language.
+
+We also don't need to write our own fixed-point combinator beacause there is a default one available called `Data.Function.fix`.
+
+What is this `(\f n -> ...)` syntax doing, exactly?  It turns out to be exactly the same as `(λf. (λn. ...))`.  So we've replaced the literal lambda with the easier-to-type backslash.  The dot is replaced with (->).  Most usefully, however, we can declare a curried expression by simply listing all of the argument names, instead of explicitly starting a new lambda abstraction for each parametre.
+
+Finally, Boolean values in Haskell are not encoded using their church encoding, so we need some way to run different code for True than for False.  There are a few ways to do that, but in the example above we're using the syntax `(if BOOLEAN then IFTRUE else IFFALSE)`.
+
+Another very useful feature we have in Haskell is the ability to define shorthand names for things, like so:
+
+	let factorial = Data.Function.fix (\f n -> if n == 0 then 1 else n * (f (pred n)))
+
+Now you can just call `factorial 5`.
+
+== Pattern Matching ==
+
+The if-then-else syntax we used above works, but what other ways do we have to choose between values based on some condition?  One of the most generally useful is called pattern matching.  We'll see more complex examples of pattern matching later, but for now the basic idea is that you write the value you want in an argument instead of a name for the argument, and then that "version" of the function will only be used if the argument passed matches.  For example:
+
+	let if' True x y = x; if' False x y = y
+
+This defines a function named `if'`.  It looks like it defines two functions with the same name, but it is actually defining two "versions" of the function.  The first one will be used when the first argument is True, and the second one when the first argument is False.  So this function produces the second argument when given a True, and the third argument when given a False.  In fact, what this function does is convert a Haskell Bool value to a Church-encoded boolean!  We can use it to rewrite our factorial like this:
+
+	let factorial = Data.Function.fix (\f n -> if' (n == 0) 1 (n * (f (pred n))))
+
+Let's create one more shorthand, to make this look a little more like our lambda calculus version:
+
+	let iszero n = if' (n == 0)
+	let factorial = Data.Function.fix (\f n -> iszero n 1 (n * (f (pred n))))
+
+== Named Recursion ==
+
+Another nice feature of Haskell's shorthand names is that they can be used inside their own definitions.  This often allows us to replace the explicit fixed-point combinator with actual recursion:
+
+	let factorial = (\n -> iszero n 1 (n * (factorial (pred n))))
+
+And as we've seen in some of the other shorthands, the argument list can be part of the shorthand name, like so:
+
+	let factorial n = iszero n 1 (n * (factorial (pred n)))
+
+== Operators ==
+
+The multiplication operator we are using has the "normal" infix syntax that many are used to from arithmetic.  That is, instead of `(*) 2 2` we can write `2 * 2`.  Can we define our own operators?
+
+It turns out that not only can we, but every function shorthand name is an operator!  If the name is a word (like the ones we've made so far), then you have to surround it in backticks to use it infix.  If the name is all symbols, then it is automatically infix and you have to surround it in parenthesis to make it not be infix.  The same syntax is used for defining the shortnames:
+
+	let f $ x = f x
+	let ($) f x = f x
+
+are the same.  What does this operator do?  It's just function application.  Why would we want an operator for function application?  Well, it can sometimes be useful in order to reduce the need for parenthesis.  For example:
+
+	let factorial n = iszero n 1 (n * (factorial (pred n)))
+	let factorial n = iszero n 1 (n * (factorial $ pred n))
+	let factorial n = iszero n 1 $ n * (factorial $ pred n)
+	let factorial n = iszero n 1 $ n * factorial (pred n)
+
+are all the same.
+
+== Pattern matching again ==
+
+Another version of our factorial function.  This time using pattern matching directly on the number instead of using `iszero`:
+
+	let factorial 0 = 1; factorial n = n * factorial (pred n)
+
+== Tail recursion ==
+
+What about tail recursion?  When we wrote the factorial in assembly, we saw that we could save on stack space by passing an accumulator forwards.  Now that we're a little bit closer to the machine, does it make sense to do this here?
+
+When coding in a high-level language, it can be possible to consider this sort of thing, but normally we should prefer the code that is easier to read and understand to the code that seems likely to be a little bit better on the machine.  This is especially true, since many of the transformations we would perform can be automatically done when our code is converted into instructions for the machine.
+
+That said, let's rewrite this function in a tail recursive fashion as an excersize:
+
+	let factorial' 0 acc = acc; factorial n acc = factorial (pred n) (n * acc)
+	let factorial n = factorial n 1
+
+Is this the best way to write that?  Well, what evaluation strategy are we using?  By default, Haskell uses an outermost evaluation strategy (similar to, but different from, Normal Order Reduction).  So let's see how this code reduces for n at 5:
+
+	factorial 4 (5 * 1)
+	factorial 3 (5 * 4 * 1)
+	factorial 2 (5 * 4 * 3 * 1)
+	factorial 1 (5 * 4 * 3 * 2 * 1)
+	factorial 0 (5 * 4 * 3 * 2 * 1 * 1)
+	(5 * 4 * 3 * 2 * 1 * 1)
+	20 * 3 * 2 * 1 * 1
+	60 * 2 * 1 * 1
+	120 * 1 * 1
+	120 * 1
+	120
+
+Hmm... we get the right answer, but if we were doing this to reduce how much storage we needed in a machine, we have failed.  Because we always reduce the outermost expression first, we just build up a chain of multiplications to do, on per step, and then actually do the multiplication at the end.
+
+Luckily, GHC will usually detect when this is happening and fix the generated instructions to not do this, but Haskell also has a special operator that lets us change the evaluation strategy in specific cases where we know this will be happening.  The `$!` operator is the same as `$` in that it just represents function application, but it has the special property that it causes the instructions to the machine to do an innermost reduction for just the application step involving that operator.  It looks like this;
+
+	let factorial' 0 acc = acc; factorial n acc = factorial (pred n) $! (n * acc)
+	let factorial n = factorial n 1
+
+Now the reduction looks like this:
+
+	factorial 4 $! (5 * 1)
+	factorial 4 5
+	factorial 3 $! (5 * 4)
+	factorial 3 20
+	factorial 2 $! (20 * 3)
+	factorial 2 60
+	factorial 1 $! (60 * 2)
+	factorial 1 120
+	factorial 0 $! (120 * 1)
+	factorial 0 120
+	120
+
+Much better!
