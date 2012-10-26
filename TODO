@@ -2,7 +2,7 @@ Lots of things.  Some I've thought of:
 
 == Haskell ==
 
-* Talk about modularity and imports.  Import lists, export lists.
+* Talk about modularity and imports.  Import lists, export lists.  Cabal
 * Types and typing.  Algebraic datatypes.
 * Merge sort and algorithm analysis
 * map, fold, other common pattern
@@ -12,7 +12,8 @@ Lots of things.  Some I've thought of:
 == C ==
 
 * Repeat the factorial.  We cannot do tail call elimination in C.  Do the transform to a while loop.
-* Standard library and memory management (heap vs stack).  Simple IO and talking to the OS (syscalls).  Memory protection.
+* Includes and build systems (make, redo).  Standard library.
+* Memory management (heap vs stack).  Simple IO and talking to the OS (syscalls).  Memory protection.
 * Arrays as pointers with pointer arithmetic.  Bounds checking (counting and terminators).  Structs/unions.
 * Linked list, doubly, circular
 * iterator, function pointer, macros, binary search
