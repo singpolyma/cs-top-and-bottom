@@ -11,7 +11,6 @@ Lots of things.  Some I've thought of:
 
 == C ==
 
-* Repeat the factorial.  We cannot do tail call elimination in C.  Do the transform to a while loop.
 * Includes and build systems (make, redo).  Standard library.
 * Memory management (heap vs stack).  Simple IO and talking to the OS (syscalls).  Memory protection.
 * Arrays as pointers with pointer arithmetic.  Bounds checking (counting and terminators).  Structs/unions.

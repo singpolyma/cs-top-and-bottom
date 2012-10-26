@@ -1,0 +1,121 @@
+= C =
+
+Now that we've covered a whole lot of material in assembly, let's move up to something that's a bit more expressive.  We want something that lives fairly close to the machine, but which is not tied to one particular sort of CPU.  The most common language for this purpose is called C.
+
+# TODO: external material on setting up gcc
+
+We will not attempt to cover all of the syntax of C at once, but a good start might be to build our factorial implementation in C.  Create a file named `factorial.c` with the following contents:
+
+	int main(int argc, char *argv[]) {
+		int n = 5;
+		int acc = 1;
+	factorial:
+		if(n == 0) {
+			return acc;
+		}
+		acc *= n;
+		n -= 1;
+		goto factorial;
+	}
+
+Build the program with the following command:
+
+	gcc -o factorial factorial.c
+
+And run it with the following command:
+
+	./factorial; echo $?
+
+You should see the correct output: 120.
+
+So, what are we doing here?  One thing you'll notice is that we're no longer manipulating specific registers directly.  We have defined two names, `n` and `acc`, to use for holding our values.  So, we have given up some control over exactly what instructions the computer is running.  The benefit, though, is that these names are not tied to any particular sort of CPU.  This program will work on any computer that has a program to translate C code into machine instructions for that particular machine (called a "C compiler").
+
+What does `n = 5` mean?  Are we defining that n represents 5?  No.  Are we asserting that 5 is equal to 5?  No.  In C (and many other lower-level languages) the equals sign is often used for what is called "assignment".  It is essentially the equivalent of the `mov` instruction.  Assignment treats the expression on the left (called the "lvalue") as a location to put some data, and puts the data from the right hand expression into that location.  What location does `n` represent?  It represents a location on the stack.  The compiler will choose a location on the stack for each such "variable" that is defined, so that we don't have to keep track of our stack layout.
+
+The `if(...) { ... }` syntax works very similarly to the `cmp` instruction and the `eq` suffix.  It will evaluate whatever expression is inside the parenthesis and only run the instructions inside the braces if the expression is not 0.  The `==` syntax compares two values for equality and evalutes to 0 if they are not equal.
+
+`return acc` is equivalent to setting whatever location is used as the return value (which was `r0` in our assembly code) to the expression you give it, and then jump back to the caller.
+
+`*=` and `-=` multiply and subtract the right-hand expression with the left-hand expression and place the result in the location represented by the left-hand side.  So `n -= 1` means "reduce the value stored in n by 1".
+
+Finally, `goto` works just like `b` and labels work pretty much exactly as they did in assembly.
+
+== Procedures ==
+
+C supports named procedures.  You've already seen one, since every C program starts in a procedure called `main`.  A procedure is very similar to the way we used labelled, self-contained code segments in assembly.  A procedure saves whatever registers it uses on the stack when it is called, and cleans up before returning.  Let's define a procedure for our factorial code:
+
+	int factorial(int n) {
+		int acc = 1;
+	dofact:
+		if(n == 0) {
+			return acc;
+		}
+		acc *= n;
+		n -= 1;
+		goto dofact;
+	}
+
+If we have named procedures, and these procedures can take arguments, then we can use them to simulate functions, even recursive ones:
+
+	int factorial(int n) {
+		if(n == 0) {
+			return 1;
+		} else {
+			return n * factorial(n - 1);
+		}
+	}
+
+The `else` segment is only run if the expression given to the if *is* equal to 0.
+
+This works, but we've got rid of our tail call, and most C compilers will not optomize that away for us, so this implementation will grow the stack for each step.  Let's go back to a tail call:
+
+	int factorial(int n, int acc) {
+		if(n == 0) {
+			return acc;
+		} else {
+			return factorial(n - 1, acc * n);
+		}
+	}
+
+Is this good enough?  Well, some C compilers will be able to perform tail-call elimination on this, but as an optomization.  We are not guarenteed that it will happen, and not every compiler supports it.  How can we solve this?  We cannot use `goto` to jump into a procedure.
+
+To represent the tail-call elimination we turn to another C construct, the while loop:
+
+	int factorial(int n, int acc) {
+		while(1) {
+			if(n == 0) {
+				break;
+			} else {
+				acc *= n;
+				n -= 1;
+				continue;
+			}
+		}
+		return acc;
+	}
+
+This loop just run the code inside over and over.  The `break` will cause the loop to stop and the `continue` will cause the loop to move on to the next iteration right away (it's like a `goto` to the top of the loop).  In this case the `continue` is not needed because nothing happens after that and the loop will keep going anyway.
+
+The `break` is also not needed, for two different reasons.  One is that we could just put the `return` right into the loop.  The other is that we could replace the `while(1)` with `while(n != 0)`, since a while loop only continues to loop while the expression in parenthesis does not evaluate to 0, and `!=` only evaluates to 0 when the two values are equal:
+
+	int factorial(int n, int acc) {
+		while(n != 0) {
+			acc *= n;
+			n -= 1;
+		}
+		return acc;
+	}
+
+== Evaluation Order ==
+
+You might see some parallels between some of this code and the Haskell code.  While we normally think of Haskell code as reducing in the same way as Untyped Lambda Calculus expressions, and we normally think of C code in terms of the equivalent machine instructions, really Haskell code does eventually get translated into instructions to some machine and C code is abstract enough that you can sometimes model it in terms of reductions.  If C had an evaluation order, what would it be?  Pretend for a moment that each construct and procedure call is a function application (there are important ways in which this is not true, but pretend).  Each construct represents some instructions to the machine.  When will those instructions be executed?  Exactly when they appear.  Consider this code:
+
+	factorial(n - 1, acc * n);
+
+translates to roughly the following assembly:
+
+	mul r1, r1, r0 # n - 1
+	sub r0, r0, #1 # acc * n
+	bl factorial
+
+The inner expressions have their instructions placed first, so that the data will be in the right places when the procedure runs.  So this is roughly equivalent to an innermost, or "strict", evaluation order.
