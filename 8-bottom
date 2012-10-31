@@ -1,0 +1,102 @@
+= Standard Library and Build Systems =
+
+Our factorial program in C is using the very strange hack of returing a value to the shell in order to return the computed value.  What we really want is to instruct the computer to print the value to the terminal.  If you recall our assembly program that printed to a serial port you might be worried: are we going to have to write code to convert numbers to their UTF-8 representation as decimal numerals and include it in every program?
+
+Luckily, C has a way to reuse modular code.  Even more lucky, it also has a set of standard libraries that you can always rely on being present on a fully-compliant C implementation.  Here is the program that prints out our result:
+
+	#include <stdlib.h>
+	#include <stdio.h>
+
+	int factorial(int n, int acc) {
+		while(n != 0) {
+			acc *= n;
+			n -= 1;
+		}
+		return acc;
+	}
+
+	int main(int argc, char *argv[]) {
+		printf("%d\n", factorial(5, 1));
+
+		return EXIT_SUCCESS;
+	}
+
+Here we use a language feature we've not seen before, `#include`, which is actually not part of C at all, but is part of the standard C preprocessor (also called cpp).  The C preprocessor is a very simple language for doing textual substitutions on text, where every instruction (also called a "preprocessor directive") starts with a # sign.  The `#include` directive tells the preprocessor to find the named file and include its contents in the current file.  If the filename is surrounded with <>, then it searches in the standard library locations for your operating system.  If the filename is surrounded with "" it first searches in the current directory, before searching in other include locations.
+
+stdlib.h includes many useful things, but in this case we're including it for `EXIT_SUCCESS`, which is defined to be the value that a successful program should return in your particular environment.
+
+We include stdio.h for `printf`.  Now, the actual definition of `printf` isn't found in the file, only a stub describing how it may be called.  The actual definition will exist on your system as already-compiled code that can be "linked" with your program.  Linking is done by a program called the "linker" and it is this program that takes one or more compiled files (or "object code") and combines them into an actual executable.  On some systems a linker may place in references to existing compiled objects on the system that may be furthur linked at runtime, so that commonly-shared instructions need not be written directly into every executable file on a system.  Linkers perform a number of tasks, often including deciding how the program will be laid out in RAM and resolving labels to actual memory addresses.
+
+`printf`'s name stands for "print formatted".  It always prints to special file called "standard out" or sometimes just "stdout", which is normally the terminal that the program was run from.  The first argument is a so-called "format string" which specifies how to print the rest of the arguments.  The string `%d\n` tells `printf` to print a number, formatted with decimal numerals, followed by a newline.  We then pass it the result of `factorial` and it will print that out.  For more information, refer to the `printf` documentation.
+
+== Make ==
+
+It can be useful, for large projects, to have a simple way to build a collection of C files and link them together correctly.  If a single file changes, we don't want to wait for the entire project to recompile.  One common tool used for this task is called `make`.  It is a general-purpose build tool, but contains features especially for C.  Create a file named factorial.h with the following in it:
+
+	int factorial(int n, int acc);
+
+This is called a "function prototype" (procedures sometimes being referred to as "functions", which they somewhat resemble).  It declares how to call a procedure without actually providing the implementation of the procedure itself.
+
+Place this in factorial.c:
+
+	#include "factorial.h"
+
+	int factorial(int n, int acc) {
+		while(n != 0) {
+			acc *= n;
+			n -= 1;
+		}
+		return acc;
+	}
+
+and finally main.c:
+
+	#include <stdlib.h>
+	#include <stdio.h>
+	#include "factorial.h"
+
+	int main(int argc, char *argv[]) {
+		printf("%d\n", factorial(5, 1));
+
+		return EXIT_SUCCESS;
+	}
+
+Now place the following in Makefile:
+
+	main: main.c factorial.c
+		gcc -o main main.c factorial.c
+
+Now if you type `make main` the command from the `Makefile` will be executed and the program will be built.  If you type it again without modifying one of the files, nothing will happen.  However, if you modify either file, both will be recompiled.  We can do better:
+
+	main: main.o factorial.o
+		gcc -o main main.o factorial.o
+
+	main.o: main.c
+		gcc -o main.o -c main.c
+
+	factorial.o: factorial.c
+		gcc -o factorial.o -c factorial.c
+
+Makefiles are written in a high-level domain-specific declarative programming language.  The output filename is followed by a colon and then a list of the files that this output file "depends on".  If any file that is depended on changes, the output file will be regenerated by running the listed commands.  If any file that is depended on is itself not up-to-date, it will be regenerated first.
+
+Here we use gcc on *.o files.  Why?  gcc knows both how to compile C code, and how to link object files.  So we invoke gcc on the object files instead of trying to directly invoke a linker ourselves.
+
+This Makefile works, but we have repeated almost the same code for each *.o file.  Is there a way to abstract this?
+
+	main: main.o factorial.o
+		gcc -o main main.o factorial.o
+
+	.SUFFIXES: .o .c
+
+	.c.o:
+		gcc -o $@ -c $<
+
+This Makefile tells make that .o and .c are file extensions it should know about, and then defines a rule for turning any .c file into a .o file.  The special value `$@` is the name of the output file.  The special value `$<` is the depended-on file that caused this rule to be used (in this case, there is only one depended-on file, so it will always be that one).  It turns out that C code is built with make so often, that this rule for turning .c files into .o files (well, an equivalent one) is defined internally in make, so we can just write:
+
+	main: main.o factorial.o
+		gcc -o $@ main.o factorial.o
+
+What if the current system uses a different C compiler than gcc?  No problem, make has a built-in value for that too:
+
+	main: main.o factorial.o
+		$(CC) -o $@ main.o factorial.o
