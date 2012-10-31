@@ -21,7 +21,7 @@ Luckily, C has a way to reuse modular code.  Even more lucky, it also has a set 
 		return EXIT_SUCCESS;
 	}
 
-Here we use a language feature we've not seen before, `#include`, which is actually not part of C at all, but is part of the standard C preprocessor (also called cpp).  The C preprocessor is a very simple language for doing textual substitutions on text, where every instruction (also called a "preprocessor directive") starts with a # sign.  The `#include` directive tells the preprocessor to find the named file and include its contents in the current file.  If the filename is surrounded with <>, then it searches in the standard library locations for your operating system.  If the filename is surrounded with "" it first searches in the current directory, before searching in other include locations.
+Here we use a language feature we've not seen before, `#include`, which is actually not part of C at all, but is part of the standard C preprocessor (also called cpp).  The C preprocessor is a very simple language for doing textual substitutions, where every instruction (also called a "preprocessor directive") starts with a # sign.  The `#include` directive tells the preprocessor to find the named file and include its contents in the current file.  If the filename is surrounded with <>, then it searches in the standard library locations for your operating system.  If the filename is surrounded with "" it first searches in the current directory, before searching in other include locations.
 
 stdlib.h includes many useful things, but in this case we're including it for `EXIT_SUCCESS`, which is defined to be the value that a successful program should return in your particular environment.
 
@@ -31,7 +31,7 @@ We include stdio.h for `printf`.  Now, the actual definition of `printf` isn't f
 
 == Make ==
 
-It can be useful, for large projects, to have a simple way to build a collection of C files and link them together correctly.  If a single file changes, we don't want to wait for the entire project to recompile.  One common tool used for this task is called `make`.  It is a general-purpose build tool, but contains features especially for C.  Create a file named factorial.h with the following in it:
+It can be useful, for large projects, to have a simple way to build a collection of C files and link them together correctly.  If a single file changes, we don't want to wait for the entire project to recompile.  One common tool used for this task is called `make`.  It is a general-purpose build tool, but contains features specifically for C.  Create a file named factorial.h with the following in it:
 
 	int factorial(int n, int acc);
 
@@ -112,9 +112,9 @@ One of the potential issues with using `#include` to bring in a header file is, 
 
 	#endif
 
-The `#define` directive defines a name to be replaced everywhere it is found by some value.  In this case, we're only interested in the name being defined, so we don't need to specify a value.
+The `#define` directive defines a name and optionally a value to be substituted for that name.  In this case, we're only interested in the name being defined, so we don't specify a value.
 
-The `#ifndef` directive causes the text between there and the `#endif` to only end up in the output if the name specified is not defined.  So, the first time the file is included it will keep the contents of the header file, but since we then define the name, it will not include the content on subsequent includes.
+The `#ifndef` directive causes the text between it and the `#endif` to only end up in the output if the name specified is not defined.  So, the first time the file is included it will keep the contents of the header file, but since we then define the name, it will not include the content on subsequent includes.
 
 === Macros ===
 
