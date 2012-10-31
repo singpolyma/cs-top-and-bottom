@@ -2,7 +2,6 @@ Lots of things.  Some I've thought of:
 
 == Haskell ==
 
-* Talk about modularity and imports.  Import lists, export lists.  Cabal
 * Types and typing.  Algebraic datatypes.
 * Merge sort and algorithm analysis
 * map, fold, other common pattern

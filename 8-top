@@ -1,0 +1,107 @@
+= Modularity =
+
+So far all of the code we have looked at has been very small and focused on demonstrating a single concept.  What if we wanted to create a larger project?  Do we need to include the source code for all of the features we want in a single place?  How can we make effective use of code other have written?  Different languages and environments solve these sorts of issues in different ways.  Here we will consider primarily the module system of Haskell.
+
+== Declaring a module for the factorial ==
+
+Place the following code into a file called Factorial.hs:
+
+	module Factorial (factorial) where
+
+	import qualified Data.Function
+
+	if' True x y = x
+	if' False x y = y
+
+	iszero n = if' (n == 0)
+
+	factorial = Data.Function.fix (\f n -> iszero n 1 (n * (f (pred n))))
+
+The first thing you see is that we're defining names without using the `let` keyword.  In a Haskell module there is very little you can do at the top level other than define names, so the `let` can be left out (actually, must be left out).
+
+The very first line of this file declares that we are creating a module named `Factorial`.  A module is a reusable chunk of code that can be imported for use by others.  After the module name is a parentesized (and comma-delimited, though you don't see that here) list of names to be "exported".  So, in this example, other can only use the `factorial` function if they import this module, they cannot use `if'` or `iszero`.  This is useful when building utility functions that are unlikely to be useful to users of the module.
+
+The next line is an example of a module import.  We have to tell the compiler what modules we are going to use.  When we say `import qualified` like this, we are saying that each imported name should be preceded by the module name (as in `Data.Function.fix`).  We can provide a shorter alias for the module name if we prefer, like so:
+
+	import qualified Data.Function as Func
+
+And then use `Func.fix`.  We may also import unqualified if we are sure none of the names we are importing will clash with any others.  In this case it is wise to use an "import list" to restrict which names are actually imported:
+
+	import Data.Function (fix)
+
+You may be wondering where some of the names we use (such as `*` and `pred`) come from.  Every standard Haskell program must import a core module named `Prelude`.  If you insert an import line to import `Prelude` yourself, that line will be used, otherwise something like the following line will be implicitly added:
+
+	import Prelude
+
+== Loading modules in GHCI ==
+
+If you run `ghci` you can load up our module with the `:l` command, like so:
+
+	:l Factorial.hs
+
+Then you may use the names defined in it just as though you had typed them in.
+
+== Building modular programs with GHC ==
+
+Let's see an example of a multi-file program and how to turn it into an executable.
+
+Place the following code in another file named Main.hs:
+
+	module Main (main) where
+
+	import Factorial (factorial)
+
+	main = print $ factorial 5
+
+then run the following command:
+
+	ghc -o Main --make Main.hs
+
+GHC will compile not only the code in Main.hs, but also the code in Factorial.hs!  It can do this because it reads the import statements and infers the file names of the other files from that.  If you run the command again, it will do nothing, because it can detect that the code has not changed since last time it built the binary.
+
+There will also be a file named `Main` produced.  This is the executable program.  If you run it, it will print out the factorial of 5.
+
+== Building modular programs with Cabal ==
+
+There is a special tool in the Haskell community for building modular Haskell programs (or just sets of Haskell modules to be used as a library) called Cabal.  It is often unnecessary, but provides a useful way to package up some modules and describe both what is being packaged and what external modules are needed for building to succeed.  It can check that all external modules needed (called "dependencies") are installed and have a compatible version.  Here's an example cabal file for our project (put in factorial.cabal):
+
+	name:            factorial
+	version:         0.1.0
+	cabal-version:   >= 1.2
+	category:        Math
+	copyright:       © 2012 Stephen Paul Weber
+	author:          Stephen Paul Weber <singpolyma@singpolyma.net>
+	maintainer:      Stephen Paul Weber <singpolyma@singpolyma.net>
+	stability:       experimental
+	build-type:      Simple
+	synopsis:        An example binary
+	description:
+	        Compute a factorial
+
+	executable Main
+	        main-is: Main.hs
+
+	        other-modules:
+	                Factorial
+
+	        build-depends:
+	                haskell2010
+
+Our project has only one dependency, the package that contains the `Prelude` module.  There are many such packages, including the older `haskell98`, the newer `haskell2010`, and the GHC-specific `base`.  Any of these versions will work for our simple project.
+
+If you run:
+
+	cabal configure
+	cabal build
+
+Then you will find the executable at `dist/build/Main/Main`.  If you run:
+
+	cabal sdist
+
+Then a convenient file containing all of the source code needed to build the project with Cabal will be placed at `dist/factorial-0.1.0.tar.gz`.
+
+== Where to find libraries ==
+
+Many operating systems will include Haskell libraries in their standard distribution mechanism.  If you are on such an operating system, it is strongly recommended to use such integrated libraries.
+
+Many more libraries are documented at and can be downloaded from [[http://hackage.haskell.org]].
