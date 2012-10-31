@@ -10,7 +10,6 @@ Lots of things.  Some I've thought of:
 
 == C ==
 
-* More on the preprocessor and header files.  redo
 * Memory management (heap vs stack).  Simple IO and talking to the OS (syscalls).  Memory protection.
 * Arrays as pointers with pointer arithmetic.  Bounds checking (counting and terminators).  Structs/unions.
 * Linked list, doubly, circular

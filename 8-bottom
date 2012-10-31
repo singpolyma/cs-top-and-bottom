@@ -100,3 +100,52 @@ What if the current system uses a different C compiler than gcc?  No problem, ma
 
 	main: main.o factorial.o
 		$(CC) -o $@ main.o factorial.o
+
+== More preprocessor ==
+
+One of the potential issues with using `#include` to bring in a header file is, what happens if a file you include also includes that header file?  Because `#include` just pastes the content of any file at its location, the file would in that case be included twice, which could result in a compiler error or strange behaviour.  To solve this, we use two more preprocessor features:
+
+	#ifndef _FACTORIAL_H
+	#define _FACTORIAL_H
+
+	int factorial(int n, int acc);
+
+	#endif
+
+The `#define` directive defines a name to be replaced everywhere it is found by some value.  In this case, we're only interested in the name being defined, so we don't need to specify a value.
+
+The `#ifndef` directive causes the text between there and the `#endif` to only end up in the output if the name specified is not defined.  So, the first time the file is included it will keep the contents of the header file, but since we then define the name, it will not include the content on subsequent includes.
+
+=== Macros ===
+
+We can even define names for the preprocessor to expand that take parameters.  These are called macros.  For example, this:
+
+	#define ADD_TWO(n) (n + 2)
+
+	int main(int argc, char *argv[]) {
+		return ADD_TWO(5);
+	}
+
+is the same as this:
+
+	int main(int argc, char *argv[]) {
+		return (5 + 2);
+	}
+
+== Redo ==
+
+Make is very well-suited to building C programs, but it lacks some features that would make it even more flexible.  Another tool that we might use for the task is called `redo`.  This tool's syntax is entirely that of a POSIX shell script, which is very useful, and in fact `redo` has an implementation written as a POSIX shell script that allows projects to be built on virtually any computer.  The use of an existing programming language as syntax makes `redo` very flexible, but you do not need to be very familiar with POSIX shell to build a simple project.
+
+`redo` does not have any built-in feature specifically for building C, so we will create a file named default.o.do to build our *.o files:
+
+	redo-ifchange "$2.c"
+	gcc -o "$3" -c "$2.c"
+
+First we instruct the `redo` system to only regenerate this output in the future if the gives files have changed.  `$2` is the name of the current output, but without the file extension, so this is the appropriate C file.  Then we simply invoke `gcc` as before.  "$3" is the name of a temporary file that should be used for any output, unless your tool can produce output to standard output, in which case you may use standard output instead.
+
+Then create a file named main.do to build our executable:
+
+	redo-ifchange main.o factorial.o
+	gcc -o "$3" main.o factorial.o
+
+Now if you run `redo main` it will behave just as `make` did.
