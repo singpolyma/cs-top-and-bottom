@@ -1,6 +1,6 @@
 = Modularity =
 
-So far all of the code we have looked at has been very small and focused on demonstrating a single concept.  What if we wanted to create a larger project?  Do we need to include the source code for all of the features we want in a single place?  How can we make effective use of code other have written?  Different languages and environments solve these sorts of issues in different ways.  Here we will consider primarily the module system of Haskell.
+So far all of the code we have looked at has been very small and focused on demonstrating a single concept.  What if we wanted to create a larger project?  Do we need to include the source code for all of the features we want in a single place?  How can we make effective use of code others have written?  Different languages and environments solve these sorts of issues in different ways.  Here we will consider primarily the module system of Haskell.
 
 == Declaring a module for the factorial ==
 
@@ -19,7 +19,7 @@ Place the following code into a file called Factorial.hs:
 
 The first thing you see is that we're defining names without using the `let` keyword.  In a Haskell module there is very little you can do at the top level other than define names, so the `let` can be left out (actually, must be left out).
 
-The very first line of this file declares that we are creating a module named `Factorial`.  A module is a reusable chunk of code that can be imported for use by others.  After the module name is a parentesized (and comma-delimited, though you don't see that here) list of names to be "exported".  So, in this example, other can only use the `factorial` function if they import this module, they cannot use `if'` or `iszero`.  This is useful when building utility functions that are unlikely to be useful to users of the module.
+The very first line of this file declares that we are creating a module named `Factorial`.  A module is a reusable chunk of code that can be imported for use by others.  After the module name is a parenthesized (and comma-delimited, though you don't see that here) list of names to be "exported".  So, in this example, others can only use the `factorial` function if they import this module, they cannot use `if'` or `iszero`.  This is useful when building utility functions that are unlikely to be useful to users of the module.
 
 The next line is an example of a module import.  We have to tell the compiler what modules we are going to use.  When we say `import qualified` like this, we are saying that each imported name should be preceded by the module name (as in `Data.Function.fix`).  We can provide a shorter alias for the module name if we prefer, like so:
 
@@ -87,7 +87,7 @@ There is a special tool in the Haskell community for building modular Haskell pr
 	        build-depends:
 	                haskell2010
 
-Our project has only one dependency, the package that contains the `Prelude` module.  There are many such packages, including the older `haskell98`, the newer `haskell2010`, and the GHC-specific `base`.  Any of these versions will work for our simple project.
+Our project has only one dependency, the package that contains the `Prelude` and `Data.Function` modules.  There are many such packages, including the older `haskell98`, the newer `haskell2010`, and the GHC-specific `base`.  Any of these versions will work for our simple project.
 
 If you run:
 
@@ -95,6 +95,10 @@ If you run:
 	cabal build
 
 Then you will find the executable at `dist/build/Main/Main`.  If you run:
+
+	cabal install
+
+Then the binaries and libraries will be installed to some system-specific place (often ~/.cabal/).  If you run:
 
 	cabal sdist
 
