@@ -27,6 +27,7 @@ The general philosophy of this material is that Computer Scientists need to have
 
 * Procedures, recursion, and tail-call elimination
 * Libraries, build systems, and the preprocessor
+* Syscalls, Pointers, and RAM
 
 == Haskell ==
 

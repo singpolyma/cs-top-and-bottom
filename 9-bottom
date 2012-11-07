@@ -1,0 +1,131 @@
+= Syscalls, Pointers, and RAM =
+
+So far we've only seen C values stored on the stack.  We've also only seen `int` values.  The `int` specifier is a built-in type in C (yes, C has a type system as well).  If you precede a variable name with a `*` then it will be treated as a pointer to a value of the specified type.  This allows procedures to change values further up the stack, just like the pointers we used in assembly:
+
+	#include <stdlib.h>
+	#include <stdio.h>
+
+	void someproc(int *p) {
+		*p = 12;
+	}
+
+	int main(int argc, char *argv[]) {
+		int i = 5;
+		printf("%d\n", i); /* 5 */
+		someproc(&i);
+		printf("%d\n", i); /* 12 */
+		return EXIT_SUCCESS;
+	}
+
+In `*p` the `*` is being used as a unary prefix operator.  In this context it means "dereference", which accesses the pointed-to value instead of the pointer value itself.  In `&i` the `&` operator means "get the address of", which will be replaced by the address where the variable is stored.
+
+== Syscalls ==
+
+We mentioned the idea of heap memory some time ago.  The idea is that the operating system manages some RAM that is not part of the stack and can reserve chunks of it for us upon request.  So, we need some way to ask the OS to do things.  We have already indirectly seen an instance of this: `printf`.  In order to print to the terminal, the OS has to let our program talk to another program.  `printf` itself normally calls an even lower-level procedure that eventually talks to the OS.  A procedure that lets you pass data to the OS is called a system call, or syscall.
+
+== malloc ==
+
+The simplest heap operation we need to OS to do for us is reserve some chunk of RAM.  How much RAM?  We will tell it:
+
+	#include <stdlib.h>
+	#include <stdio.h>
+
+	int main(int argc, char *argv[]) {
+		int *heap_int = malloc(sizeof(*heap_int));
+		if(heap_int) {
+			*heap_int = 12;
+			printf("%d\n", *heap_int); /* 12 */
+			return EXIT_SUCCESS;
+		} else {
+			return EXIT_FAILURE;
+		}
+	}
+
+`sizeof` is a standard macro that computes at compile-time the size in RAM of the argument (in this case, the value pointed to by `heap_int`, that is, an `int`).  So we use `malloc` to ask the OS to reserve us just enough RAM to store one `int`.
+
+What is the if for?  Well, what if the OS cannot reserve the RAM for us?  Maybe we are out of RAM.  In that case, `malloc` will return the special value `NULL`, which is defined to be a macro for 0.  So the if statement will check if the return value is 0 and return `EXIT_FAILURE` in that case.
+
+In this simple case, the heap memory is not that useful, but because the memory in question is not on the stack, it can be passed around no matter what happens to the stack.  For example:
+
+	#include <stdlib.h>
+	#include <stddef.h>
+	#include <stdio.h>
+
+	int *someproc(int start) {
+		int *p = malloc(sizeof(*p));
+		if(p) {
+			*p = start + 1;
+			return p;
+		} else {
+			return NULL;
+		}
+	}
+
+	int main(int argc, char *argv[]) {
+		int *heap_int = someproc(1);
+		if(heap_int) {
+			printf("%d\n", *heap_int); /* 2 */
+			return EXIT_SUCCESS;
+		} else {
+			return EXIT_FAILURE;
+		}
+	}
+
+== free ==
+
+What about when we're done with some reserved RAM?  We should tell the OS that we are done with it, so that other programs can be allowed to use it.  If we fail to relese some reserved heap RAM, and instead of hold on to it forever, that is called a memory leak.
+
+	#include <stdlib.h>
+	#include <stdio.h>
+
+	int main(int argc, char *argv[]) {
+		int *heap_int = malloc(sizeof(*heap_int));
+		if(heap_int) {
+			*heap_int = 15;
+			printf("%d\n", *heap_int); /* 15 */
+			free(heap_int);
+			/* Do not dereference heap_int.  It points at unreserved RAM. */
+			return EXIT_SUCCESS;
+		} else {
+			return EXIT_FAILURE;
+		}
+	}
+
+Besides the danger of memory leaks, we see here another possible danger of doing our own memory management.  If we free some RAM we must be careful not to use any of the pointers that may be pointing at that RAM, because the RAM may contain anything.
+
+== Memory Protection ==
+
+Besides the fact that unreserved RAM main contain anything, the OS may actually prevent us from accessing it.  This is done to prevent one program from corrupting the RAM being used by another one.  For example, this program will crash on almost any OS:
+
+	#include <stdlib.h>
+	#include <stddef.h>
+
+	int main(int argc, char *argv[]) {
+		*NULL = 12;
+		return EXIT_SUCCESS;
+	}
+
+== realloc ==
+
+What if after we reserve some RAM we decide we need more RAM?  Moreover, we don't want to lose the values we already wrote into the RAM.  `realloc` lets us resize the size of a reservation, and any newly reserved RAM will be after the existing RAM.  If the OS can not reserve enough RAM right after the existing RAM, then all the data will be copied to a new location:
+
+	int main(int argc, char *argv[]) {
+		int *heap_int = malloc(sizeof(*heap_int));
+		if(heap_int) {
+			*heap_int = 15;
+			heap_int = realloc(heap_int, sizeof(*heap_int)*2);
+			*(heap_int + 1) = 20;
+			printf("%d\n", *heap_int); /* 15 */
+			printf("%d\n", *(heap_int + 1)); /* 20 */
+			free(heap_int);
+			return EXIT_SUCCESS;
+		} else {
+			return EXIT_FAILURE;
+		}
+	}
+
+We will talk about the `*(heap_int + 1)` style expressions more next time.  Note that even after a call to `realloc`, we just call `free` with the pointer to the block.
+
+== Performance ==
+
+A quick note on performance: calls to `malloc` and `realloc` can be very slow.  Most importantly they are (from your program's point of view) nondeterministic in running time.  This is because the OS has to go through the heap and find a chunk of the right size, and that process may itself take time.
