@@ -12,5 +12,5 @@ Lots of things.  Some I've thought of:
 * Memory management (heap vs stack).  Simple IO and talking to the OS (syscalls).  Memory protection.
 * Arrays as pointers with pointer arithmetic.  Bounds checking (counting and terminators).  Structs/unions.
 * Linked list, doubly, circular
-* iterator, function pointer, macros, binary search
+* iterator, function pointer, binary search
 * Reference counting

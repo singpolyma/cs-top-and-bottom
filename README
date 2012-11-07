@@ -26,7 +26,7 @@ The general philosophy of this material is that Computer Scientists need to have
 == C ==
 
 * Procedures, recursion, and tail-call elimination
-* Libraries and build systems
+* Libraries, build systems, and the preprocessor
 
 == Haskell ==
 
