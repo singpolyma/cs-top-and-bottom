@@ -1,0 +1,179 @@
+= Types =
+
+Let's return for a moment to the Untyped Lambda Calculus.  Why do we call it "untyped"?  Consider the following:
+
+	(λn. (λs.λz. s (n s z))) (λx.λy. x) -- SUCC TRUE
+
+Of course, this is nonsense.  How can we take the successor of True?  If we reduce this, however, it will reduce to some value, but that value will be nonsense.  We may not notice we have made a mistake until the nonsense propogates further out into our program.
+
+One solution to this problem would be if the compiler or interpreter could know what values the successor function "can take".  Then the compiler could warn us when we have made a mistake.
+
+Haskell takes this one step further, to what is called strong typing.  Every value has a type, and if a function is given a value of the wrong type, the compiler will refuse to compile the program.  Type mismatches are treated as errors.
+
+What is a type?  You can think of a type as the set of all possible values that are valid in some context.
+
+== Unit type ==
+
+If we think of types as sets of values, then a unit type is a set of one element.  For example:
+
+	data Unit = OneUnit
+
+Defines a type named `Unit`.  Values of type `Unit` may only take on the value `OneUnit`.  `Unit` is called a type or a type constructor and `OneUnit` is called a value or a data constructor.  Because they are always used in different ways, they don't even need to have different names:
+
+	data Unit = Unit
+
+A unit type can be useful, but you don't often care which one it is.  `Prelude` exports a default unit type whose type and contructor are both named `()`.
+
+== Sum Type ==
+
+If we think of types as sets of values, then a unit type is a set of multiple elements.  That is, it is the sum (or union) of multiple other types.  For example:
+
+	data Weekday = Monday | Tuesday | Wednesday | Thursday | Friday
+	data Weekend = Saturday | Sunday
+
+== Type Constructors ==
+
+Type constructors are actually functions that can take values.  For example, this allows sum types to contain more complex types:
+
+	data DayOfWeek = Weekday Weekday | Weekend Weekend
+
+This might look a bit confusing, but the first word in each specification (the first `Weekday` or `Weekend`) is the name of the data constructor for that part of the type.  Every possible value of a type needs a unique data constructor so that the compiler knows what type we're talking about when constructing or pattern matching a value.  The second word is the type that lives "inside" the data constructor, such that we can specify a more complex member type.
+
+== Product Type ==
+
+If we think of types as sets of values, then a product type is a (cartesian) product of sets.  That is, it is the set of values that combine values of multiple types at once.  For example:
+
+	data WeekdayAndUnit = WeekdayAndUnit Weekday Unit
+
+Haskell has a special syntax for generic product types called tuples.  For example:
+
+	(True, Monday)
+
+has type `(Bool, Weekday)`.  Tuples may have as many members as you want.
+
+== GHCI :t ==
+
+GHCI has a special command, `:t`, which queries any value for its type.  For example:
+
+	> :t True
+	True :: Bool
+	> :t (True, False, ())
+	(True, False, ()) :: (Bool, Bool, ())
+
+New types cannot be defined in GHCI.  You will have to put them into a module, and then load the module into GHCI with the `:l <filename>` command.
+
+== Parametric Polymorphism ==
+
+What if we want to define multiple very similar types?  For example:
+
+	data BoxForBool = BoxForBool Bool
+	data BoxForInteger = BoxForInteger Integer
+	data BoxForWeekday = BoxForWeekday Weekday
+
+Haskell has a feature designed for just such a use called type variables:
+
+	data Box a = Box a
+
+This does not define a type, but instead a whole set of types.  You can put anything you want in for the a, so:
+
+	> :t Box True
+	Box True :: Box Bool
+
+You can combine this with any of the other things we've seen, for example, a sum type:
+
+	data Maybe a = Nothing | Just a
+
+== Type Inference ==
+
+So far in our Haskell coding we have not needed to care about types.  If we don't tell the compiler what the types a function expects, how can it produce an error when we make a mistake?  It can because it infers a type for any expression that doesn't have an explicit one, even functions.  For example:
+
+	> :t (\x (Box y) -> if' x y ())
+	(\x (Box y) -> if' x y ()) :: Bool -> Box () -> ()
+
+How does GHCI know what the type of this function is?  Well, it can plainly see that it is a function with two curried arguments, so it starts with the base type `(a -> b -> c)`.  Actually, because of the pattern match it can plainly see that the second argument is some sort of `Box`, so: `(a -> Box b -> c)`.  Now let's examine the building blocks:
+
+	> :t if'
+	if' :: Bool -> t -> t -> t
+
+It can furthermore see that the third argument to `if'` is `()`, because that value is hard-coded, so there is anothing equation: `if' :: a -> b -> () -> c`.  Solving these equations gives `Bool -> () -> () -> ()`.
+
+To solve the original equation, the compiler needs to match up types from the base equation to uses of the parameters in the body of the function.  It sees that `x` is used as the first argument to `if'`, so `a` must be `Bool` (often written `a ~ Bool`).  Similarly, `y` is used as the second argument, so `b ~ ()`.  Finally, the return value of the function is the return value of the `if'` call, so `c ~ ()`.  The full solution gives us:
+
+	Bool -> Box () -> ()
+
+as expected.
+
+== Type Signatures ==
+
+Sometimes we do not want to rely on type inference.  There are multiple reasons this might be.  One is that the inferred type might be more general than we want; we may want to restrict a function to operate on only specific types even if there is nothing structurally about them that restricts how they could be used.  Another reason is for refactoring.  If we know what the type should be, we can write it down, and then if we change the code in the future the compiler can tell us if we have accidentally changed the code so that it no longer matches the type.
+
+Types are written down using what are called "type signatures".  For example:
+
+	> :t (\x (Box y) -> if' x y y)
+	(\x (Box y) -> if' x y y) :: Bool -> Box t -> t
+
+But if we add a type signature:
+
+	> :t (\x (Box y) -> if' x y y) :: Bool -> Box Bool -> Bool
+	(\x (Box y) -> if' x y y) :: Bool -> Box Bool -> Bool
+
+== Recusive Types ==
+
+Can a type definition contain a reference to itself?  It sure can!  For example:
+
+	data Nat = Zero | Succ Nat
+
+	> :t Zero
+	Zero :: Nat
+	> :t Succ Zero
+	Succ Zero :: Nat
+
+We can even write a recursive type with no base case:
+
+	data Void = Void Void
+
+It might not seem very useful, but this is a type for which we cannot actually construct a value, which can be useful in a number of cases, such as when representing the type of a value that comes in from an imported low-level library.  We can also parametrise recursive types:
+
+	data List a = Nil | Cons a (List a)
+
+	> :t Nil
+	Nil :: List a
+	> :t Cons True Nil
+	Cons True Nil :: List Bool
+
+If you replace `Nil` with `[]` and `Cons` with `:`, this is in fact the normal definition of lists in Haskell.  When you write:
+
+	[True, False, True, False]
+
+The compiler rewrites this ("desugars" it) to:
+
+	True : False : True : False : []
+
+== Type Synonyms ==
+
+Sometimes we just want to give a type a conveniant name, for example we could represent some text as a list of characters:
+
+	type String = [Char]
+
+or maybe functions that produce a Bool:
+
+	type BoolFun = (a -> Bool)
+
+== Records ==
+
+For very large product types, it can be convenient to give the different "fields" in the product names, for example:
+
+	data Person = APerson {
+		name :: String,
+		isFemale :: Bool,
+		parents :: (Maybe Person, Maybe Person)
+	}
+
+	alice = APerson {
+		name = "Alice",
+		isFemale = True,
+		parents = (Nothing, Nothing)
+	}
+
+	kris :: Person
+	kris = APerson "Kris" False (alice, Nothing)
