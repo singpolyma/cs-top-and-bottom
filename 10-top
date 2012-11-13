@@ -1,0 +1,93 @@
+= Sorting and Algorithm Analysis =
+
+We are now going to investigate the contstruction of a more involved algorithm that solves a common problem: sorting.  Haskell's extensive standard library of course contains many implementations of sorting algorithms already, but the process of constructing one will be instructive.  It will also allow us to reason about the efficiency of the algorithm.
+
+== Type Signature ==
+
+No matter what algorithm we design, it will need to act in the same way in order to be a proper sorting algorithm.  We can characterise at least some of this behaviour by writing down a type signature for our sort.  We might first try this:
+
+	sort :: [a] -> [a]
+
+But we will need one more thing: some way to compare the elements of the list!
+
+	sort :: (a -> a -> Bool) -> [a] -> [a]
+
+== Divide ==
+
+We again choose the "divide and conquer" strategy for constructing our algorithm.  How should we divide up a list of items?  How about we divide it in half:
+
+	split :: [a] -> ([a], [a])
+	split xs = splitAt (len `div` 2) xs
+		where
+		len = length xs
+
+How efficient is this?  Well, `length` is documented to take `O(n)` time.  What does that mean?  `O(x)` is just a fancy way to say "x is an upper bound, modulo a constant factor", and `n` is traditionally used to mean "the size of the input".  So, in the worst case `length` must process every single event of the input list some number of times.  If we look at the code for `length`:
+
+	length :: [a] -> Int
+	length [] = 0
+	length (_:xs) = 1 + length xs
+
+We see that it always iterates over every single item in the list exactly once.  We can characterise such a running time as simply `n`.  `splitAt` can be characterised similarly.  So how can we characterize `split`?  Well, we simply call `length` and then `splitAt` and nothing else, so:
+
+	n + n = 2n = O(n)
+
+The `O(n)` is also sometimes called the "asymptotic running time", because as the size of the input grows, the importance of the constant factors starts to become very small, any only the input size matters.  However, that does not mean it's not sometimes worthwhile to perform fewer passes:
+
+	split :: [a] -> ([a], [a])
+	split xs = go xs xs
+		where
+		go (y:ys) (_:_:zs) = let (us, vz) = go yz zs in (y:us, vs)
+		go ys _ = ([], ys)
+
+In this version, we duplicate the list, and then recurse over both copies simultaneously.  If the first list still has elements and (more importantly) the second list still has at least two elements, we take one element from the first list and drop two elements from the second one.  In this way, we "count by twos" through the entire list until the second list does not have two elements left in it.  At that point, because we took one element from the first list for every two elements in the second list, the remainder of the first list will be the second half of the list.  This version of `split` makes only one pass over the input.
+
+== Conquer ==
+
+Let's write out our base cases now:
+
+	sort :: (a -> a -> Bool) -> [a] -> [a]
+	sort _ [] = []
+	sort _ [x] = [x]
+
+Both an empty list and a list with only one element are already sorted.  Now what about the main case?
+
+	sort p xs = merge p (sort p lhs) (sort p rhs)
+		where
+		(lhs, rhs) = split xs
+
+We recursively sort the left and right hand sides of the split list, and then… what?  We `merge`.  This algorithm is often called "merge sort" because of this.  We need some  way to take two sorted lists (the sorted left and right sides) and "merge" them into a single list that is still sorted.  Again we start by writing down the type signature for `merge`:
+
+	merge :: (a -> a -> Bool) -> [a] -> [a] -> [a]
+
+And the base cases:
+
+	merge _ x [] = x
+	merge _ [] y = y
+
+And the main step:
+
+	merge p (x:xs) (y:ys)
+		| p x y     = x : merge p xs (y:ys)
+		| otherwise = y : merge p (x:xs) ys
+
+When `x` is "before" `y`, according to the ordering described by the comparison function, we want to take it as the next element of the list we are incrementally building.  Otherwise we want to take `y` as the next element.  When they are equal, it does not matter which one we choose.
+
+== Analysis ==
+
+The run time of this whole algorithm is much more complex than the analysis we did for `split`.  You should be able to see that `merge` does just one pass over the input (sometimes called "linear time" because of the form of the function `n`).  So the runtime is:
+
+	T(n) = time for split) + (time for recursion) + (time for merge)
+
+Which is:
+
+	T(n) = (time for recusion) + 2n
+
+What is the time for the recursion?  Well, it's the time for mergesort on the smaller list, which is exactly the function we are building!
+
+	T(n) = 2T(n/2) + 2n
+
+This sort of equation can be a pain to solve in general, but what if we only cared about the asymptotic running time?  It turns out there is a theorem for solving this sort of equation, called the "Master theorem", which you can read about <https://en.wikipedia.org/wiki/Master_theorem>.  Using this, we find the result:
+
+	T(n) ~ O(n*log(n))
+
+It can, in fact, be proved that general sorting is always at least `O(n*log(n))` in the worst case.

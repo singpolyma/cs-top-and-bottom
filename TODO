@@ -2,7 +2,6 @@ Lots of things.  Some I've thought of:
 
 == Haskell ==
 
-* Merge sort and algorithm analysis
 * map, fold, other common pattern
 * Type classes, Functor, Applicative functor
 * Monad
