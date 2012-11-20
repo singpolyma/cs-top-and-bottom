@@ -1,0 +1,184 @@
+= Structured Data and Pointer Arithmetic =
+
+We are going to look now at ways to implement structured data storage in C.  We saw one low-level data structure in assembly: the array.  Let's revisit that in C:
+
+	#include <stdlib.h>
+	#include <stdio.h>
+
+	int main(int argc, char *argv[]) {
+		int *arr = malloc(sizeof(*arr) * 3); /* Should check for NULL return */
+		*arr = 55;
+		*(arr + 1) = 60;
+		*(arr + 2) = 71;
+		printf("%d %d %d\n", *arr, *(arr+1), *(arr+2));
+
+		free(arr);
+		return EXIT_SUCCESS;
+	}
+
+If you recall from the arrays in assembly, you'll note that back then we added 4 (the size of a word) to the pointer in order to get at the "next" element.  Here we only add 1.  Why?  Well, because C is meant to be portable to multiple kinds of CPU, it would be a very bad idea to hardcode the number 4, since the size of an `int` may be different on a different CPU.  So then we would be writing `+ sizeof(*arr)` everywhere.  And if we add something other than a multiple of `sizeof(*arr)`, we end up pointing at memory between two possible item locations (sometimes called "misaligned").  Luckily for us, the C compiler knows that we are operating on `arr` and that the only reasonable thing we could want to add is multiples of `sizeof(*arr)`, so when you do arithmetic with pointers in C the compiler always translates that to operations relative to the size of the type.
+
+== Array Notation ==
+
+This pattern of arrays is so common that C has a special syntax for it:
+
+	*(x + y) ≡ x[y] ≡ [x]y
+
+So, we can rewrite our program:
+
+	#include <stdlib.h>
+	#include <stdio.h>
+
+	int main(int argc, char *argv[]) {
+		int *arr = malloc(sizeof(*arr) * 3); /* Should check for NULL return */
+		arr[0] = 55;
+		arr[1] = 60;
+		arr[2] = 71;
+		printf("%d %d %d\n", arr[0], arr[1], arr[2]);
+
+		free(arr);
+		return EXIT_SUCCESS;
+	}
+
+If we know the exact size of the array we want at compile time, as we do here, we can also declare arrays on the stack:
+
+	int arr[3];
+
+== Boundaries ==
+
+What happens in this case:
+
+	#include <stdlib.h>
+	#include <stdio.h>
+
+	int main(int argc, char *argv[]) {
+		int arr[2];
+		arr[0] = 55;
+		arr[1] = 60;
+		arr[2] = 71;
+		printf("%d %d %d\n", arr[0], arr[1], arr[2]);
+
+		return EXIT_SUCCESS;
+	}
+
+We tell the compiler to reserve space on the stack for two `int`s, but then proceed to write to and read from a third location.  What will happen here?  Well, since this is just pointer arithmetic, the compiler cannot notice this for us.  We will overwrite the next location on the stack, which may have very strange results.  To prevent this, there are two popular strategies: counting and termination.  In counting, we keep a `size_t` variable around with the length of the array, and check to make sure we are only using the number of elements there are space for.  In termination, we store something special at the end of the array so that we will know when we have hit the end.  For example:
+
+	#include <stdlib.h>
+	#include <stdio.h>
+
+	int main(int argc, char *argv[]) {
+		char str[3];
+		*str = 'h';
+		str[1] = 'i';
+		str[2] = '\0';
+		printf("%s\n", str);
+
+		return EXIT_SUCCESS;
+	}
+
+`printf` and many other standard library procedures have features to handle arrays of `char` that end with a "NUL-character" (represented by `'\0'`).  Such a structure is often called a "string" or a "C string".  It is so common, there is a special syntax for it:
+
+	#include <stdlib.h>
+	#include <stdio.h>
+
+	int main(int argc, char *argv[]) {
+		char str[3] = "hi";
+		printf("%s\n", str);
+
+		return EXIT_SUCCESS;
+	}
+
+Where is the `'\0'`?  Since it is always at the end, the compiler inserts it for us.  But we must be sure to reserve enough space for it!  In some cases, the compiler can tell how big the space needs to be, so we can just say:
+
+	char str[] = "hi";
+
+== Struct ==
+
+What about product types?  How can we implement those?  You might think about packing data in some order in RAM, but what type would the pointer have?  How would pointer arithmetic work?  How would you keep the values aligned?  All of these problems can be solved, but doing it in a portable way can be a pain.
+
+Luckily, C has syntax for exactly this:
+
+	struct person {
+		int   age;
+		int   height;
+	};
+
+These can be allocated on the stack:
+
+	#include <stdlib.h>
+	#include <stdio.h>
+
+	int main(int argc, char *argv[]) {
+		struct person joe;
+		joe.age = 12;
+		joe.height = 112;
+		printf("%d %d\n", joe.age, joe.height);
+
+		return EXIT_SUCCESS;
+	}
+
+Or the heap:
+
+	#include <stdlib.h>
+	#include <stdio.h>
+
+	int main(int argc, char *argv[]) {
+		struct person *joe = malloc(sizeof(*joe)); /* Should check for NULL */
+		(*joe).age = 12;
+		(*joe).height = 112;
+		printf("%d %d\n", (*joe).age, (*joe).height);
+
+		free(joe);
+		return EXIT_SUCCESS;
+	}
+
+And there is conveniance syntax for it:
+
+	(*x).y ≡ x->y
+
+Giving us:
+
+	joe->age = 12;
+
+== Union ==
+
+What about sum types?  The implementation here would be very similar to for product types, only we just need a block of RAM large enough to fit the largest item, and we store only one item.  The syntax for these is very similar as well:
+
+	#include <stdlib.h>
+	#include <stdio.h>
+
+	union int_or_char {
+		int  i;
+		char c;
+	};
+
+	int main(int argc, char *argv[]) {
+		union int_or_char val;
+		val.i = 12;
+		printf("%d\n", val.i);
+		val.c = '^';
+		printf("%d\n", val.c);
+
+		return EXIT_SUCCESS;
+	}
+
+Of course, this provides no way to tell which value is in the union, so this is commonly extended to a "tagged union":
+
+	#include <stdlib.h>
+	#include <stdio.h>
+
+	struct int_or_char {
+		int isInt;
+		union {
+			int  i;
+			char c;
+		} v;
+	};
+
+	void print_int_or_char(struct int_or_char *x) {
+		if(x->isInt) {
+			printf("%d\n", x->v.i);
+		} else {
+			printf("%c\n", x->v.c);
+		}
+	}
