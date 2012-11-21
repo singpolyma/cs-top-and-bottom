@@ -1,0 +1,131 @@
+= Type Classes =
+
+There's something a little bit unsatisfying about our sort function.  Most types only have one way, or one very common way, to compare them for ordering, but our function requires the user to pass this in every time.  What if we had relied of many such functions?  The user could perhaps define records full of functions, one record for each type, and then always pass those along when needed.  It turns out that Haskell has feature called typeclasses to help with exactly this sort of situation.
+
+Typeclasses are a form of ad-hoc polymorphism (also called "overloading") that allow the implementation of a set of functions to be parameterised over a single type variable.  Consider the following transformation of our sort function:
+
+	sort :: (a -> a -> Bool) -> [a] -> [a]
+
+	--
+
+	data Ord a = Ord {(<=) :: a -> a -> Bool}
+	sort :: Ord a -> [a] -> [a]
+
+	--
+
+	class Ord a where
+		(<=) :: a -> a -> Bool
+
+	sort :: (Ord a) => [a] -> [a]
+
+Filling in the conceptual record of functions associated with a particular typeclass for a particular type is called instantiating the type in the typeclass:
+
+	instance Ord Bool where
+		True  <= True  = True
+		False <= False = True
+		False <= True  = True
+		True  <= False = False
+
+When a type variable is restricted to be a member of a typeclass, the functions of that typeclass can be used on it directly, like so:
+
+	min :: (Ord a) => a -> a -> a
+	min x y
+		| x <= y = x
+		| otherwise = y
+
+The type variable in a typeclass can itself be restricted to be a member of a typeclass, and member functions can be given default implementations in terms of each other.  For example, the real `Eq` and `Ord` typeclasses in `Prelude` are defined like this:
+
+	class Eq a where
+		(==), (/=) :: a -> a -> Bool
+
+		x /= y  = not (x == y)
+		x == y  = not (x /= y)
+
+	data Ordering = LT | GT | EQ
+
+	class (Eq a) => Ord a where
+		compare              :: a -> a -> Ordering
+		(<), (<=), (>=), (>) :: a -> a -> Bool
+		max, min             :: a -> a -> a
+
+		compare x y
+			| x == y    = EQ
+			| x <= y    = LT
+			| otherwise = GT
+
+		x <= y  = compare x y /= GT
+		x <  y  = compare x y == LT
+		x >= y  = compare x y /= LT
+		x >  y  = compare x y == GT
+
+		max x y
+			| x <= y    =  y
+			| otherwise =  x
+	    min x y
+			| x <= y    =  x
+			| otherwise =  y
+
+Sometimes, functions with obvious default implementations are included in the typeclass so that instances can choose more efficient implementations when possible.
+
+Many of these simple default typeclasses can have instances automatically generating for you, using a deriving clause:
+
+	data IntOrDouble = I Int | D Double deriving (Eq, Ord)
+
+== Folds ==
+
+Let's move for a moment to consider another sort of generalisation.  In many cases, we find ourselves writing recursion that looks like this:
+
+	sum :: (Num a) => [a] -> a
+	sum []     = 0
+	sum (x:xs) = x + sum xs
+
+This is called structural recursion, because we are recursing over the structure of the data type.  We can generalise this pattern in what is called a fold, in this case, `foldr`.
+
+	foldr :: (a -> b -> b) -> b -> [a] -> b
+	foldr f z = go
+		where
+		go []     = z
+		go (x:xs) = x `f` go xs
+
+Which could be generalised beyond lists like so:
+
+	class Foldr f where
+		foldr :: (a -> b -> b) -> b -> f a -> b
+
+There is also a tail-recursive variant of this, called `foldl`:
+
+	foldl :: (a -> b -> a) -> a -> [b] -> a
+	foldl f z = go z
+		where
+		go [] acc     = acc
+		go (x:xs) acc = go xs (f x acc)
+
+One thing you may observe about `foldl` is that since it uses an accumulator, it cannot produce any partial results as it goes, which makes it much less useful in cases with a lot of lazyness.
+
+== Functors ==
+
+There is a very common form of fold where one builds back up exactly the original context, but with the values at each point modified.  For example:
+
+	map :: (a -> b) -> [a] -> [b]
+	map f = foldr ((:) . f) []
+
+Here we start with an empty list, and then build up a new list, with each element just being `f` applied to the input element at that position.
+
+This idea of transforming every element in some context is called a `Functor`.  In Haskell, it is a very simple standard typeclass:
+
+	class Functor f where
+		fmap :: (a -> b) -> f a -> f b
+
+	instance Functor [] where
+		fmap = map
+
+	instance Functor Maybe where
+		fmap _ Nothing  = Nothing
+		fmap f (Just x) = Just (f x)
+
+	instance Functor (Either a) where
+		fmap _ (Left x)  = Left x
+		fmap f (Right x) = Right (f x)
+
+	instance Functor ((->) a) where
+		fmap = (.)
