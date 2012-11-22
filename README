@@ -36,3 +36,4 @@ The general philosophy of this material is that Computer Scientists need to have
 * Modules and build systems
 * Types
 * Merge sort and runtime analysis
+* Typeclasses, including Functor

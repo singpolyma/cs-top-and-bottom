@@ -2,9 +2,8 @@ Lots of things.  Some I've thought of:
 
 == Haskell ==
 
-* map, fold, other common pattern
-* Type classes, Functor, Applicative functor
 * Monad
+* Dynamic typing (universal sum type over Hask)
 
 == C ==
 
