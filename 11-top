@@ -129,3 +129,25 @@ This idea of transforming every element in some context is called a `Functor`.  
 
 	instance Functor ((->) a) where
 		fmap = (.)
+
+A few of these may require more explanation.  In `instance Functor (Either a)`, we are treating `Either` as a curried type contstructor.  `Either` is defined like this:
+
+	data Either a b = Left a | Right b
+
+So `Either a` is a type constructor that only takes one type variable, which is exactly the sort of type constructor our `Functor`s must be.  This also means that our `Functor` implementation can only run `f` over the `Right` values, because the type of the value in `Left` is not one that we are parameterising over.  You can think of this as the same as the implementation for `Maybe`, but the `Nothing` value has a note that it carries along.
+
+What is `(->) a`?  Well `->` is the type constructor for a function such as `(a -> b)`.  So, `(->) a` is a partial application of the function type constructor.  How is this transforming an element in a context?  Well, the element we're parameterising over in this case is the return value of the function.  So, we want something that will transform the return value of a function to some other value.  This is exactly what function composition does:
+
+	(.) :: (b -> c) -> (a -> b) -> a -> c
+	(.) f g x = f (g x)
+
+=== Laws ===
+
+Beyond the intuition for what makes something a Functor, there are some very simple laws that any implementation of `fmap` must obey:
+
+	fmap id ≡ id
+	fmap (g . h) ≡ (fmap g) . (fmap h)
+
+Firstly, if we transform every element by the identity function, that must be the same as applying the identity function to the entire context.  This law means that a Functor must not modify the context, only the values.
+
+The second law is similar in import.  It says that applying a single compound transformation to every element must be the same as applying first one transformation and then the other from that compound transformation.
