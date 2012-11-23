@@ -2,7 +2,7 @@ Lots of things.  Some I've thought of:
 
 == Haskell ==
 
-* Monad
+* Applicative functor and Monad
 * Dynamic typing (universal sum type over Hask)
 
 == C ==
@@ -10,3 +10,11 @@ Lots of things.  Some I've thought of:
 * Linked list, doubly, circular
 * iterator, function pointer, binary search
 * Reference counting
+
+== Ruby ==
+
+* Memoized fibonacci
+* Classes and inheritance
+* Duck typing and monkeypatching
+* Mix-in modules
+* Metaprogramming
