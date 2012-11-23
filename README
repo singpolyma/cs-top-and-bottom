@@ -29,6 +29,7 @@ The general philosophy of this material is that Computer Scientists need to have
 * Libraries, build systems, and the preprocessor
 * Syscalls, Pointers, and RAM
 * Structured Data and Pointer Arithmetic
+* Singly and doubly linked lists, and trees
 
 == Haskell ==
 
