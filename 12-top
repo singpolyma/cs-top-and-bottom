@@ -1,0 +1,216 @@
+= Applicative Functors and Monads =
+
+Astute readers may have made an observation about the type signature of `fmap`.  Perhaps these paretheses will help you see it:
+
+	fmap :: (a -> b) -> (f a -> f b)
+
+We can think of `fmap` as "lifting" a normal function with no context to a function that also passes through a context.  Now consider the following:
+
+	somefunc :: (a -> b -> c)
+
+We could, of course, write an `fmap2` for this, but we would need to write an implementation of a function for each arity we want to support, for each type we want to support.  It would be very nice if we could write some simple building block from which lifting functions of arbitrary arity could easily be constructed.
+
+== Applicative Functors ==
+
+Consider this:
+
+	fmap somefunc :: (Functor f) => f a -> f (b -> c)
+
+If we try to just use `fmap`, we end up "lifting" the first argument, but the entire rest of the curried chain ends up inside a context.  So we are going to need to operate on functions inside a context.  Based on that idea, we first define a function for putting any function into a context:
+
+	class (Functor f) => Applicative f where
+		pure :: a -> f a
+
+This helps us a little, because now we can make any value look like the sort of value-in-context form we think we want, but it doesn't actually solve our problem.  What we want to be able to do is apply a function that is inside a context to some value:
+
+	class (Functor f) => Applicative f where
+		pure :: a -> f a
+		(<*>) :: f (a -> b) -> f a -> f b
+
+This new operator can be thought of as distributing the context across the (->).  Let's try to solve our problem with this:
+
+	somefunc :: (a -> b -> c)
+	pure somefunc :: (Applicative f) => f (a -> b -> c)
+	(pure somefunc <*>) :: (Applicative f) => f a -> f (b -> c)
+	(<*>) . (pure somefunc <*>) :: (Applicative f) => f a -> f b -> f c
+
+If that last line is confusing, consider this equivalent line:
+
+	(\x y -> pure somefunc <*> x <*> y) :: (Applicative f) => f a -> f b -> f c
+
+So, we can build arbitrary-arity lifting functions by just repeatedly applying this operator.  In fact, you may have noticed above that we can even build `fmap`:
+
+	(\f x -> pure f <*> x) :: (Applicative f) => (a -> b) -> (f a -> f b)
+
+This is sometimes given the operator name `<$>` (think "apply a function in a box"), allowing us to write:
+
+	somefunc <$> functor1 <*> functor2
+
+=== Laws ===
+
+As with Functors, there are some laws an Applicative instance must obey in order to cover all edge cases:
+
+	pure id <*> v ≡ v               -- Preserve identity
+	pure f <*> pure x ≡ pure (f x)  -- Applying to a trivial value is trivial
+	u <*> pure y ≡ pure ($ y) <*> u -- Trivial values do not affect the context
+	u <*> (v <*> w) ≡ pure (.) <*> u <*> v <*> w
+
+=== Examples ===
+
+	instance Applicative Maybe where
+		pure = Just
+		(Just f) <*> (Just x) = Just (f x)
+		_        <*> _        = Nothing
+
+	instance Applicative [] where
+		pure = (:[])
+		fs <*> xs = concat $ map (\f -> map (f $) xs) fs
+
+	instance Applicative (Either a) where
+		pure = Right
+		(Right f) <*> (Right x) = Right (f x)
+		(Left x)  <*> _         = Left x
+		_         <*> (Left x)  = Left x
+
+	instance Applicative ((->) a) where
+		pure = const
+		f <*> g = (\x -> f x (g x))
+
+The instance for `[]` is certainly not the only possible one, but it is a very useful one.  It applied each function from the left to each value from the right and concatenates all the results into a single list, that is, it performs the cartesian product of the functions on the left and the values on the right.
+
+The instance for `((->) a)` is particularly interesting.  `pure` needs to lift a value into the context of being the return value of a function.  `const` is exactly the function that takes any input value and produces the gives output value:
+
+	const :: a -> b -> a
+
+The definition for `<*>` is also interesting.  We construct a function taking in a value (since that is the expected return type) and pass the input value to `f`, which gives us the function we are applying the right hand value to.  We also need to apply the right-hand value to the input value (since the value we care about is the return value) and apply that result to the other.  How is this useful?  Well, consider the following:
+
+	(+) <$> (+3) <*> (*100) :: (Num a) => a -> a
+
+We can think of this sort of like building up an expression tree.  This function will take in a number, apply it to both `(+3)` and `(*100)`, and apply both of those results to `(+)`.  Another example:
+
+	(,,) <$> (+1) <*> (+2) <*> (+3) $ 0 -- (1,2,3)
+
+== Monads ==
+
+We now consider the following situation:
+
+	func1 :: (Applicative f) => a -> f b
+	func2 :: (Applicative f) => b -> f c
+	func1 someA :: (Applicative f) => f b
+	func2 <$> func1 someA :: (Applicative f) => f (f c)
+
+We have no way to lift a function that takes values that are not in any context but returns a value in a context:
+
+	fmap func1 :: (Functior f) => f a -> f (f b)
+
+No matter what we do, we will end up double-wrapping the return value in two layers of context.  One intuition is to provide a function for joining these layers:
+
+	class (Applicative f) => Monad f where
+		join :: f (f a) -> f a
+
+This would allow us to write the above as:
+
+	join (func2 <$> func1 someA) :: (Monad m) => m c
+
+However this gets awkwark pretty fast:
+
+	join (func3 <$> (join (func2 <$> func1 someA)))
+
+So we may wish to write this helper (sometimes called "bind"):
+
+	f =<< x = join (f <$> x)
+	func3 =<< func2 =<< func1 someA
+
+In fact, `Prelude` defines `Monad` in the following way:
+
+	class Monad m where
+		return :: a -> m a -- This is just pure
+		(>>=)  :: m a -> (a -> m b) -> m b
+		(>>)   :: m a -> m b -> m b
+		x >> y = x >>= const y
+
+=== Laws ===
+
+	pure a >>= k ≡ k a -- Trivial context can be applied directly
+	m >>= pure ≡ m     -- pure just rewraps the value
+	m >>= (\x -> k x >>= h) ≡ (m >>= k) >>= h
+
+These can be written slightly cleaner if we introduce the Monadic composition (also called Kleisli composition, or "fish") operator:
+
+	(>=>) :: (Monad m) => (a -> m b) -> (b -> m c) -> (a -> m c)
+	f >=> g = \x -> f x >>= g
+
+Now we can write the laws as:
+
+	pure >=> g ≡ g
+	g >=> pure ≡ g
+	(g >=> h) >=> k ≡ g >=> (h >=> k)
+
+=== Examples ===
+
+I will show you the instances in terms of both `join` (which is not actually part of the Monad class in Prelude) and `>>=`.
+
+	instance Monad Maybe where
+		join (Just (Just x)) = Just x
+		join _               = Nothing
+
+		Nothing >>= _ = Nothing
+		(Just x) >>= f = f x
+
+	instance Monad [] where
+		join = concat
+		xs >>= f = concat (map f xs) -- Or concatMap f xs
+
+	instance Monad (Either a) where
+		join (Right (Right x)) = Right x
+		join x                 = x -- x is some (Left y)
+
+		(Left x) >>= f = Left x
+		(Right x) >>= f = f x
+
+	instance Monad ((->) a) where
+		join f = (\k -> f k k)
+		g >>= f = (\k -> f (g k) k)
+
+Here's an example of using `Maybe` to handle errors using the Monad instance:
+
+	parseMayFail >>= (\ast ->
+		findSpecificNode ast >>= (\node ->
+			return (node, ast)
+		)
+	)
+
+If the parse fails, or the find fails, this whole thing is `Nothing`, otherwise it is `Just (node, ast)`.  So the `Maybe` Monad allows us to treat a value which may not exist as though it does, and have failure handled for us.  The `Either` Monad is identical, except that failure can have some value passed along with it (such as an error code).
+
+=== Do notation ==
+
+Code like the above is very common when dealing with monads, so for when you have very deeply nested lambdas in order to capture value in names, you can use this synatactic sugar instead:
+
+	do
+		ast <- parseMayFail
+		node <- findSpecificNode ast
+		return (node, ast)
+
+The list Monad we implemented above follows the idea from our Applicative implementation of doing cartesian products:
+
+	do
+		x <- [1,2,3]
+		y <- ['a', 'b', 'c']
+		return (x,y)
+
+This produces:
+
+	[(1,'a'),(1,'b'),(1,'c'),(2,'a'),(2,'b'),(2,'c'),(3,'a'),(3,'b'),(3,'c')]
+
+This is very similar to how set comprehensions work in mathematics.  This is also sometimes called the "nondeterminism" monad, because you can think of it as computing some function on each possible set of inputs.
+
+== IO ==
+
+You may recall from our discussion of how we might do IO in the Untyped Lambda Calculus that one way would be to have some lambda abstraction that gets called by some low-level code, which lambda calculus would produce some data structure describing low-level machine operations to perform.  Haskell has a generall-accepted implementation of just such an abstraction.  If you create a module named `Main` which exports a function named `main`, some low-level code will call into this function when your program runs.  The return type of this function must be `IO ()`.  Why bother parameterising the value if it must be `()`?  Well, because internally to the program, it can be anything!  `IO` is a Functor, and Applicative Functor, and a Monad, and in fact almost everything else about it is hidden from the programmer in order to allow different Haskell implementations to do different things underneath.
+
+`Prelude` exports many functions which return various `IO` values, and by combining these values into a large value, which we ultimately produce, we can ask the machine to do various low-level things:
+
+	main :: IO ()
+	main = getLine >>= putStrLn
+
+Now, you may be woried.  How are large interactive programs, or programs which do not terminate without some user input, going to work under this model?  Well, because of lazyness, we do not need to produce the entire `IO` value at once.  It can be produced incrementally, and the low-level code will interpret it as it becomes available.  This allows us to interleave our "pure" Haskell code with low-level side effects in a clean way.
