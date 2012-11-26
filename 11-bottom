@@ -13,7 +13,7 @@ Each cell is a value and another cell:
 
 How should we specify that there is no next cell (like Nil from the Haskell definition)?  We can use the special reserved pointer value NULL (which is address 0).
 
-What is the `void *`?  How can we point to nothing?  Well, since every pointer value is the same size, the compiler doesn't actually need to know what sort of pointer it is to store the value.  A `void *` is a way of telling the compiler "just forget about what sort of data this points at".  The developer must remember what sort of data it is, and switch back to a specifically typed pointer before any pointer arithmetic or dereferencing will work.
+What is the `void *`?  How can we point to nothing?  Well, since every pointer value is the same size, the compiler doesn't actually need to know what sort of pointer it is to store the value.  A `void *` is a way of telling the compiler "just forget about what sort of data this points at".  The developer must remember what sort of data it is, and switch back to a specifically typed pointer before any pointer arithmetic or dereferencing will work.  This is similar to the parametric polymorphism we use in Haskell, in that we can operate on the structure without knowing the type of the values, but when we do want to operate on the values the compiler cannot help us, and we must explicitly state the correct type.
 
 	#include <stdlib.h>
 
