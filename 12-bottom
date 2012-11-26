@@ -1,0 +1,116 @@
+= Function Pointers, Iterators, and Binary Search =
+
+Now that we have lists implemented in C, is there any way to implement things like `foldr` or `map`?  If you recall the type for map:
+
+	map :: (a -> b) -> [a] -> [b]
+
+The first argument is a function type.  How can we do this in C?  Well, how do prodecure calls work?  If you recall from assembly:
+
+	bl somelabel
+
+And the assembler replaces each label with the address the label represents.  In fact we could implement a procedure call like this:
+
+	ldr r0, =somelabel
+	bl r0
+
+What is `r0` in this case?  It is storing an address in RAM, so it must be some kind of pointer.  We will call pointers to procedure entry points "procedure pointers" (though they are sometimes called "function pointers", from the observation that procedures can be used in a similar way to functions).  A variable of a procedure pointer type in C is describe in the same way as a prodecure declaration, but with an extra set of parenthesis and an asterisk:
+
+	int (*foo)(int, int);
+
+declares a procedure pointer named `foo` which points at a procedure taking two `int`s and returning an `int`.
+
+== Iterators ==
+
+In a low-level language, a more fundamental building block than a fold is called an "iterator":
+
+	void each(struct list *node, void (*f)(void *)) {
+		for(; *node, node = node->next) {
+			f(node->data);
+		}
+	}
+
+Fold is certainly possible:
+
+	void *foldl(void *(*f)(void *, void *), void *z, struct list *node) {
+		for(; *node, node = node->next) {
+			z = f(z, node->data);
+		}
+		return z;
+	}
+
+But using this is an excersize in memory management.  An interesting alternative to `map` that gets around this is the in-place `map`:
+
+	void map_inplace(void *(*f)(void *), struct list *node) {
+		for(; *node, node = node->next) {
+			node->data = f(node->data);
+		}
+	}
+
+Which has the disadvantage of destroying the original list in the process.  You use it like this:
+
+	void *add_one(void *x) {
+		int *r = malloc(sizeof(*r)); /* Check return value! */
+		*r = (*(int*)x) + 1
+		return r; /* You'll have to free this at some point. */
+	}
+
+	map(&add_one, some_list); /* Put this where you want to do the map */
+
+Even this has a whole bunch of memory management questions.  It turns out the easiest thing in many cases is to go back to the raw iterator:
+
+	void add_one_inplace(void *x) {
+		int *r = (int *)x;
+		*r += 1;
+	}
+
+	each(some_list, add_one_inplace);
+
+== Binary Search ==
+
+Let's now think about the problem of searching an array.  With procedure pointers, we now have the ability to write something like this:
+
+	void *lsearch(const void *key, const void *base,
+	             size_t length, size_t item_size,
+	             int (*compar)(const void *, const void *)) {
+		const char *array = base; /* Use char so that arithmetic is by 1s */
+		int i;
+		for(i = 0; i < length; i++) {
+			if(compar(key, array + (i*item_size)) == 0) {
+				return (void *)(array + (i*item_size));
+			}
+		}
+
+		return NULL; /* Not found */
+	}
+
+It is traditional for comparison procedures in C to return less than, equal to, or greater than zero to mean that the first argument is less than, equal to, or greater than the second argument.  So here we just use the comparison function to check for equality.  We need this because we cannot dereference the `void *` ourselves.  We use a `char *` because the size of `char` is defined to be 1 byte, so we can do arithmetic at arbitrary alignment with this type.
+
+The search we have implemented is called "linear search", beacuse it has a linear time complexity.  If you consider the worst case of the above code (when the item is not in the array) then every item of the array must be checked.  Can we do better?
+
+What if the array were already sorted?  We could then check if the element were in the first or second half of the array, by comparing with the centre element.
+
+	void *bsearch(const void *key, const void *base,
+	             size_t length, size_t item_size,
+	             int (*compar)(const void *, const void *)) {
+		const char *array = base; /* Use char so that arithmetic is by 1s */
+		if(length < 1) {
+			return NULL; /* Not found */
+		} else {
+			int mid = length / 2;
+			switch(compar(key, array + (mid*item_size))) {
+				case 0: /* Found it! */
+					return (void *)(array + (mid*item_size));
+				case 1: /* It's in the upper half */
+					return bsearch(key, array + (mid*item_size) + 1,
+					               length - mid - 1, item_size, compar);
+				case -1: /* It's in the lower half */
+					return bsearch(key, array,
+					               length - mid, item_size, compar);
+			}
+		}
+	}
+
+The time complexity of this algorithm is again something recursive that we will need to solve using the Master Theorem:
+
+	T(n) = T(n/2)
+	T(n) ~ O(log(n))
