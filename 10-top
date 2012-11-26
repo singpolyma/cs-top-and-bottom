@@ -29,7 +29,7 @@ How efficient is this?  Well, `length` is documented to take `O(n)` time.  What 
 
 We see that it always iterates over every single item in the list exactly once.  We can characterise such a running time as simply `n`.  `splitAt` can be characterised similarly.  So how can we characterize `split`?  Well, we simply call `length` and then `splitAt` and nothing else, so:
 
-	n + n = 2n = O(n)
+	n + n = 2n ~ O(n)
 
 The `O(n)` is also sometimes called the "asymptotic running time", because as the size of the input grows, the importance of the constant factors starts to become very small, any only the input size matters.  However, that does not mean it's not sometimes worthwhile to perform fewer passes:
 
