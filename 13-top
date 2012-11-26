@@ -1,0 +1,129 @@
+= Dynamic Typing =
+
+Think now about an application where you want to store some configuraion data:
+
+	data Config = Config {
+		server     :: String,
+		port       :: Int,
+		connection :: DbConnection
+	}
+
+This works fine, but what if you wanted it to be extensible?  Perhaps you're building some sort of library where you're not sure what sort of configuration keys the user will want ahead of time:
+
+	data ConfigValue = S String | I Int | C DbConnection
+	type Config = [(String, ConfigValue)]
+
+Now, what if we weren't even sure ahead of time what types the value could be?  The user knows what types, and the user can provide useful code to handle the extra sum type constructors, but we do not.  A first try might be:
+
+	type Config a = [(String, a)]
+
+But we want to be able to handle in our code at the least the keys and values we can support.  We might choose a representation like this:
+
+	data Config a = Config {
+		server     :: String,
+		port       :: Int,
+		connection :: DbConnection,
+		userData   :: [(String, a)]
+	}
+
+And much of the time this works out for us, but sometimes we want to be able to model the data all in the same way.  What we think we want is a sum type that can have constructors added to it by users of our library, but here we have run up against the edge of our type system.  What will we do?  Well, first recall that a sum type can be implemented as a tagged union in C:
+
+	struct sum {
+		int tag;
+		union {
+			int i;
+			char c;
+		} data;
+	};
+
+We don't really want a `union`, because this has the same sort of issue that we're running into with Haskell's sum types.  We're really trusting the user to know what the type of the value is anyway, since `union` does not enforce access, so:
+
+	struct universal {
+		int tag;
+		void *data;
+	};
+
+Bringing that back to Haskell:
+
+	data Dynamic a = Dynamic Int a
+
+This seems like the right direction, but right now `Dynamic` is parametrised over the type of the value.  We want to tell the compiler not to care about the type of the value.  In a hand-wavey sense, we want something sort of like:
+
+	data Dynamic = forall a. Dynamic Int a
+
+Now is when it becomes important that, under the surface, Haskell is still implemented to run on a real machine, just like C.  This allows for the following library function to exist:
+
+	import Unsafe.Coerce
+	unsafeCoerce :: a -> b
+
+This is exactly the functonality we need!  We can just tell the compiler not to care about type.
+
+== Typeable ==
+
+We want to implement our extensible sum type without knowing what all the possible types are in advance.  We could have the user pass the tag around, but that seems messy, so we define:
+
+	type TypeRep = Int
+
+	class Typeable a where
+		typeOf :: a -> TypeRep
+
+Of course, writing instances of this by hand is very dangerous, because if we choose the same `TypeRep` as someone does for another type, this cannot be checked by the compiler.  We will ignore this issue for now.
+
+A simple operation we can now implement is the type-safe cast:
+
+	import Data.Maybe
+	import Unsafe.Coerce
+
+	cast :: (Typeable a, Typeable b) => a -> Maybe b
+	cast x = r
+		where
+		r | typeOf x == typeOf (fromJust r) = Just $ unsafeCoerce x
+		  | otherwise = Nothing
+
+As long as our `Typeable` instances are good, this will check that the expected return type is the same as the input type (which will all be figured out by the type inference system), and if so the value comes out as a `Just`.  Otherwise we return `Nothing`.
+
+== Back to Dynamic ==
+
+So now we have all the tools we need to build our extensible sum type:
+
+	data Dynamic = Dynamic TypeRep ()
+
+	toDyn :: (Typeable a) => a -> Dynamic
+	toDyn x = Dynamic (typeOf x) (unsafeCoerce x)
+
+	fromDynamic :: (Typeable a) => Dynamic -> Maybe a
+	fromDynamic (Dynamic typ val) =
+		case unsafeCoerce val of
+			r | typ == typeOf r -> Just r
+			  | otherwise = Nothing
+
+	dynTypeRep :: Dynamic -> TypeRep
+	dynTypeRep (Dynamic typ _) = typ
+
+Which now allows us to write:
+
+	import Data.List (lookup)
+
+	type Config = [(String, Dynamic)]
+
+	someConfig = [("server", toDyn "google.com"), ("port", toDyn (80 :: Int)), ("connection", toDyn someConnection)]
+
+	getConfigServer :: Config -> Maybe String
+	getConfigServer cfg = lookup "server" cfg >>= fromDynamic
+
+	-- Apply one action if the port is an Int, run the other if it is a String
+	-- The unsafeCoerce here is safe because we never actually use the value,
+	-- we just want something of the correct type for `typeOf`
+	ioStringOrIntPort :: Config -> (Int -> IO ()) -> (String -> IO ()) -> Maybe (IO ())
+	ioStringOrIntPort cfg ioInt ioString = lookup "port" cfg >>= (\port ->
+			if dynTypeRep port == typeOf (unsafeCoerce () :: Int) then
+				fmap ioInt (fromDynamic port)
+			else if dynTypeRep port == typeOf (unsafeCoerce () :: String) then
+				fmap ioString (fromDynamic port)
+			else
+				Nothing
+		)
+
+== Disadvantages ==
+
+There are a few very key disadvantages of any fully-extensible sum type (which you may have guessed is sometimes called a "dynamic type").  One is that we have lost most of our compiler's ability to help us find our mistakes.  Unlike the Untyped Lambda Calculus we are likely to get an error when we run wrong code instead of just a bogus value, but we still get no information about what we have done wrong until the particular piece of code with the bug happens to run.  The other major issues is a performance concern: any safety we have comes from checking that the tag is correct, which means extra code running to check that on every data access.  Additionally, any polymorphism must be implemented by checking the type tag against the different supported types, which also adds overhead.  For these reasons, such types should be used with care.
