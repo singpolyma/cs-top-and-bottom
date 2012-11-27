@@ -26,7 +26,7 @@ We also need a way to say what things we are testing for equality.  The simplest
 
 The `cmp` causes the `bne` to only execute if r1 and 0 are not equal.
 
-The above code will keep subtracting 6 from r0, and 1 from r1, until r1 equals 0.  What if r1 starts at 0?  Then the first subtraction (which runs before we check for equality) will cause it to no longer equal 0, and it only goes down from there, so the program will run forever.  Lets fix that:
+The above code will keep subtracting 6 from r0, and 1 from r1, until r1 equals 0.  What if r1 starts at 0?  Then the first subtraction (which runs before we check for equality) will cause it to no longer equal 0, and then the number will get smaller and smaller until it reaches the limits of the size of the register and then strange machine-specific things will happen.  Lets fix that:
 
 	b loopcond
 	doing:
