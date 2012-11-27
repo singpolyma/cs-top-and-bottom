@@ -10,7 +10,7 @@ Well, first we will need a way to run instructions more than once.  To do this, 
 		sub r0, r0, #6
 		b doing
 
-What is this `doing:`?  Any word at the start of a line followed by a colon is a "label".  A "label" marks a position in the code so that we can refer to it elsewhere.  This is because instructions may get loaded into the computer's RAM anywhere, and so we might not know ahead of time where and given instruction is in order to jump to it.  Labels solve this problem, and also let us use nice names that make sense to us instead of obscure numbers representing locations in RAM.
+What is this `doing:`?  Any word at the start of a line followed by a colon is a "label".  A "label" marks a position in the code so that we can refer to it elsewhere.  This is because instructions may get loaded into the computer's RAM anywhere, and so we might not know ahead of time where a given instruction is in order to jump to it.  Labels solve this problem, and also let us use nice names that make sense to us instead of obscure numbers representing locations in RAM.
 
 If you run this program, it will never finish.  That's because the `b` instruction just causes the CPU to jump (or "branch") to the `doing` label.  So it will just keep running that subtract instruction forever.
 

@@ -1,6 +1,6 @@
 = The Top =
 
-High level programming is primarily focussed on describing ways of doing things, also known as "algorithms".  To do high level programming, we need a language to describe these algoritms in a way that is unambiguous so that we can be sure what we are saying and any computer that hypothetically might run the algorithm would be able to.
+High level programming is primarily focussed on describing ways of doing things, also known as "algorithms".  To do high level programming, we need a language to describe these algoritms in a way that is unambiguous so that we can be sure that what we are saying is what we intend, and any computer that hypothetically might run the algorithm would be able to.
 
 Unlike low-level programming, high-level programming is not tied to the inner workings of any particular computer.  Instead, we build abstractions that desribe what we want done and then build programs to translate these abstractions into instructions for the computer.  There may be many different lists of instructions that perform the exact same algorithm.
 
