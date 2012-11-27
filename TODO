@@ -2,7 +2,9 @@ Lots of things.  Some I've thought of:
 
 == Bottom ==
 
-* Binary and two's complement
+* Add material about load-execute and RAM layout to 1-bottom
+* Add material about binary and two's complement to 1-botmom
+* Add material about pipelining to 2-bottom
 
 == C ==
 
