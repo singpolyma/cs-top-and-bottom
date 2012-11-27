@@ -56,19 +56,19 @@ and
 
 represent the same program.  So do:
 
-	(λx.xy)
+	(λx.x y)
 
 and
 
-	(λz.zy)
+	(λz.z y)
 
 But these programs are not the same:
 
-	(λx.zy)
+	(λx.z y)
 
 and
 
-	(λz.zy)
+	(λz.z y)
 
 Because in the first one, the `z` in the body of the lambda abstraction represents `z`, but in the second it has been "bound" (or "captured") by the abstraction, such that it now represents the symbol that the abstraction will be applied to.
 

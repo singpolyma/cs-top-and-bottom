@@ -77,7 +77,7 @@ Solved!  Unfortunately, this has the opposite problem:
 
 We would have expected the nested `x` to be bound (since it is part of the body of the lambda abstraction), but in our result, it ends up being "freed".  In fact, this trick is used to create lambda abstractions which act as though they take multiple arguments (called "currying"):
 
-	((λx.(λy.xy))a)b
+	((λx.(λy.x y))a)b
 
 Alpha-equivalence comes to our rescue.  We can perform what is called an "alpha-conversion" or "alpha-renaming" in order to keep an equivalent program that will neither capture nor free any variables.
 
@@ -101,7 +101,7 @@ Some more examples of single steps of beta-reduction:
 	(λx.(λy.x))y
 	(λy.x)
 
-	(((λx.(λy.(λz.(λx.yz))))w)t)s
-	((λy.(λz.(λr.yz)))t)s
-	(λz.(λr.tz))s
-	(λr.ts)
+	(((λx.(λy.(λz.(λx.y z))))w)t)s
+	((λy.(λz.(λr.y z)))t)s
+	(λz.(λr.t z))s
+	(λr.t s)
