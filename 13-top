@@ -49,7 +49,7 @@ Bringing that back to Haskell:
 
 This seems like the right direction, but right now `Dynamic` is parametrised over the type of the value.  We want to tell the compiler not to care about the type of the value.  In a hand-wavey sense, we want something sort of like:
 
-	data Dynamic = forall a. Dynamic Int a
+	data Dynamic = ∀ a. Dynamic Int a
 
 Now is when it becomes important that, under the surface, Haskell is still implemented to run on a real machine, just like C.  This allows for the following library function to exist:
 
