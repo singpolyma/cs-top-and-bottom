@@ -28,7 +28,7 @@ Now, this may seem pretty obvious.  Of *course* the answer to both questions is 
 
 Since this table lists all of the possible values X or Y could have (assuming that all of the possible answers are True and False), we can use it as a definition for ∧, and we will always be able to agree on the meaning of an expression.  So if I write:
 
-	(X ∧  Y) ∧ Z
+	(X ∧ Y) ∧ Z
 
 Then you know for this to be True, X, Y, and Z *all* have to be True.  Why?  Well, because for (X ∧ Y) to be true then X and Y both have to be True, and for (...) ∧ Z to be True, (...) and Z both have to be True.  So X, Y, and Z all have to be True.
 
