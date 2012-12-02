@@ -16,7 +16,7 @@ The general philosophy of this material is that Computer Scientists need to have
 === Untyped Lambda Calculus ===
 
 * ULC syntax and alpha equivalence
-* Beta reduction
+* Beta reduction and Turing Completeness
 * Normal form and reduction strategies
 * Boolean Algebra
 * Church Numerals

@@ -72,4 +72,12 @@ and
 
 Because in the first one, the `z` in the body of the lambda abstraction represents `z`, but in the second it has been "bound" (or "captured") by the abstraction, such that it now represents the symbol that the abstraction will be applied to.
 
+== Turing Completeness ==
+
 The Untyped Lambda Calculus may seem to be so simplistic that it could never be useful, but in fact, the Church–Turing thesis says that this language can represent any algorithm which can be transformed into a series of steps for a machine to follow.
+
+This gives rise to the idea of Turing Completeness.  Formally, a computational system is Turing Complete if it can compte every Turing-computable function (that is, it can simulate a universal Turing machine).  The Untyped Lambda Calculus can be shown to be able to compute every such function, which means that something is also Turing Complete if it can implement an interpreter for the Untyped Lambda Calculus.  Additionally, the Untyped Lambda Calculus cannot compute *more* functions than a universal Turing machine, and so it is Turing Equivalent.
+
+The Church–Turing thesis says that every algorithmic system of computation is either Turing Equivalent or is not Turing Complete.  This thesis is unproven, but there is no evidence against it, mounting evidence for it, and it is generally accepted in Computer Science.
+
+Many different facilities may be used in order to implement Turing Completeness.  In practise, for low level lanugages, having both conditional branching and infinite mutable storage is sufficient for Turing Completeness.  In practise, we ignore the requirement for infinite storage, so our ARMv6 assembly will be seen to be Turing Complete.  This also means that computers based on the ARMv6 CPU can evaluate arbitrary Untyped Lambda Calculus expressions (modulo storage space limitations).
