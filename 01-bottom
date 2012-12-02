@@ -43,3 +43,44 @@ Now the value 42 is in `r1` instead of in `r0`.  We could also use `r1` while pe
 	add r0, r1, #12
 
 Now `r0` is 42 again.  Question: what is `r1`?  It's 30, because we wrote a 30 into it with `mov` and `add` only changed the value in `r0`.
+
+== Program Layout ==
+
+All of the computers we will be dealing with, and indeed most computer with which you are likely to ever interact, are so-called "stored program computers".  These computers have instructions to the machine stored off of the CPU at run-time in RAM.  Before a program starts running, the instructions that make up the program must be loaded into RAM at some location.  Locations in RAM are sometimes called "addresses".
+
+The CPU has a special register called the "Program Counter" which holds the address of the next instruction it should execute.  This instruction is loaded in from RAM and then executed.  When an instruction is done being loaded, the program counter is incremented by the size of one instruction (so that it now holds the address of the next instruction).
+
+The address of the first instruction of a program is called the "entry point".  To run a loaded program, the program counter (also called "pc") is loaded with the value of this entry point.
+
+== Number Systems ==
+
+So far all of the numbers we have seen have been written out using the arabic-numeral decimal notation you may be used to.  Let's do a quick refresh of what this notation really means:
+
+	42 ≡ 4*(10^1) + 2*(10^0)
+	163 ≡ 1*(10^2) + 6*(10^1) + 3*(10^0)
+
+There is no reason the base number must be ten.  We might decide to use, for example, sixteen:
+
+	6A ≡ 6*(16^1) + 10*(10^0)
+
+Or two:
+
+	10011 = 1*(2^4) + 0*(2^3) + 0*(2^2) + 1*(2^1) + 1*(2^0)
+
+Both base-sixteen ("hexadecimal") and base-two ("binary") are fairly common in low-level programming.  Binary is common because it is the high-level conceptual model of how numbers are stored in a computer.  Hexadecimal is common because numbers in a computer are usually addressed as some number of "bytes" (8 bits, which is 8 binary digits) and these are nicely representex in hexadecimal (two hexadecimal digits to one byte).
+
+== Two's Complement ==
+
+If computers conceptually store numbers using binary, how do they store negative numbers?  It varies by computer, but arithmetic instructions on the CPUs we will be considering use a system called "Two's Complement".  The two's complement of an N-bit number (usually 32 for our purposes) is the result of subtracting the absolute value from 2^N.  The two's complement representation of signed numbers with N bits can represent numbers from -(2^(N-1)) to (2^(N-1) - 1).  Two's complement has the advantage that most arithmetic operations can operate on both negative and positive numbers in exactly the same way.
+
+For clarity: the first bit of a negative number under two's complement is always a 1.  The first bit of a positive number under two's complement is always a 0.
+
+There is a strage side-effect of this representation.  Adding 1 to the largest positive number on N bits results in the smallest negative number on N bits:
+
+	01111111 + 1 = 10000000
+
+And vice-versa:
+
+	10000000 - 1 = 01111111
+
+This behaviour is called "overflow".

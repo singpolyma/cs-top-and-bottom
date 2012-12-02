@@ -1,7 +1,5 @@
 = Branches and Conditionals =
 
-# TODO: more about how a program is laid out in RAM
-
 So far the instructions we have seen only allow us to give the computer a fixed-size list of things to do.  Once all of the instructions have run, the program is done.  What if we wanted to do something simple like subtract 6 from r0 the number of times that are stored in r1?
 
 Well, first we will need a way to run instructions more than once.  To do this, we use the `b` instruction:
@@ -58,7 +56,7 @@ Maybe we could store the location to come back to in a register?  But how do we 
 	b doing
 	comeback: ...rest...
 
-This would work, but then we have to come up with a unique label name for every place we want to do this.  Luckily, the CPU also needs to know where we are in order to load and run the next instruction.  It stores the location in register 15, which we can also call "pc" (for "Program Counter"):
+This would work, but then we have to come up with a unique label name for every place we want to do this.  Luckily, we can store the current value of the program counter:
 
 	mov r14, pc
 	b doing
