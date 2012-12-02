@@ -34,7 +34,42 @@ The above code will keep subtracting 6 from r0, and 1 from r1, until r1 equals 0
 		cmp r1, #0
 		bne doing
 
-Now we check the condition before starting the loop.  We could also write it like this:
+Now we check the condition before starting the loop.
+
+== Pipelining ==
+
+Many CPUs use a technique called "instruction pipelining" to increase the number of instructions they can run at one time.  This works because the circuitry used to do one thing may not be needed to do something else.  So, for example, the CPU can be fetching the next instruction from RAM while it is executing the current one.  The classic RISC pipeline steps are:
+
+# Instruction fetch
+# Instruction decode and register fetch
+# Execute
+# Memory access
+# Register write back
+
+Some assemblers expose the pipelined nature of their underlying processor to the programmer.  This means that instructions may not quite run exactly in the order that they are written, but may have parts run in parallel.  Normally this is not a problem, but consider the following on a pipeline-exposing assembler:
+
+	add r5, r5, #1
+	mov r6, r5
+
+How will this be executed?
+
+# Fetch the `add` instruction
+# Decode the `add` instruction and fetch `r5`, while fetching the `mov` instruction
+# Execute the `add` instruction, while decoding the `mov` instruction and fetching `r5`
+# No memory access for `add`, while executing the `mov` instruction
+# Write the incremented value of `r5` from `add`, while there is no memory access for `mov`
+# Write the copied value to `r6` for `mov`
+
+Do you see the problem?  `r5` is copied before the `add` is done!  The value of `r6` will be wrong.  This is called a "data hazard".
+
+Even if the assembler does not expose the pipelined nature of the CPU to the programmer, there may still be things that need to be taken into account because of the way hazards are worked around.  For example, consider this code:
+
+	b doing
+	mov r1, #1
+
+We do not want to execute that `mov` simultaneously with the `b`!  In fact, because of the branch, we do not want to execute the `mov` at all.  This means that the processor will have to "stall" the pipeline every time we branch.  That is, any further loads will have to be stopped until the branch can be completed (since until `pc` gets the new value written, and instruction loading is impossible).
+
+All of this means that branching can be more expensive than other instructions (because it defeats pipelining).  We could rewrite our code like this:
 
 	doing:
 		cmp r1, #0
@@ -42,9 +77,9 @@ Now we check the condition before starting the loop.  We could also write it lik
 		subne r1, r1, #1
 		bne doing
 
-This way, the subtractions and branch will never happen if r1 is equal to 0, and we have less branches happening (since we don't need to jump to the end to do the comparison).  This can matter because branch instructions cause CPUs to lose some of the smart things they do in order to go faster (because they suddenly are executing code from somewhere else than they might have expected).
+This way, the subtractions and branch will never happen if r1 is equal to 0, and we have less branches happening (since we don't need to jump to the end to do the comparison).
 
-# TODO: Talk about pipelining here?  Later?  Earlier?
+== Procedures ==
 
 So now we have a program that can do something to r0 based on r1.  What if we wanted to do this many times in our program?  Would we have to copy this code everywhere?
 
