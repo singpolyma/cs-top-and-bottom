@@ -31,6 +31,7 @@ The general philosophy of this material is that Computer Scientists need to have
 * Structured Data and Pointer Arithmetic
 * Singly and doubly linked lists, and trees
 * Function Pointers, Iterators, and Binary Search
+* Memory Management Techniques
 
 == Haskell ==
 

@@ -1,0 +1,112 @@
+= Memory Management Techniques =
+
+We haven't written anything very complicated in C yet, and already we have had some examples where proper `free`ing of RAM was left out for clarity of the example.  While deciding exactly when and how the OS should reserve space on the heap for us (or release it) is very useful and powerful, it can also be a lot of extra work.  Is there some way to write code to handle this for us?
+
+== The Stack ==
+
+If we need some space during the life of some procedure, then we can put it on the stack.  This is the best solution when it is possible, because allocation of stack space take a constant, deterministic amount of time and is automatically cleaned up at the right time.
+
+Standard C does not provide us with a mechanism for manipulating the stack directly, but at a machine level it is very possible.  For example, consider the following pseudo-C:
+
+	void stack_strdup(const char *s, void (*f)(char *)) {
+		char buf[strlen(s)+1];
+		memcpy(buf, s, strlen(s)+1);
+		f(buf); /* f can mutate the argument without touching s */
+	}
+
+This is not valid according to the C standard, but we can imagine it being compiled to this assembly:
+
+	stack_strdup:
+		push {r1, r3, r4, r5}
+		mov r4, r0
+		mov r1, r5
+
+		bl strlen
+		add r0, r0, #1
+		add sp, sp, r0
+
+		mov r3, r0
+		mov r0, sp
+		mov r1, r4
+		bl memcpy
+
+		mov r0, sp
+		bl r5
+
+		sub sp, sp, r3
+		pop {r1, r3, r4, r5}
+		b lr
+
+Compilers are sometimes able to detect when a heap allocation does not "escape" from the stack frame where it is first allocated (such as by being returned) and can transform such allocations to stack allocations.  This technique is called "escape analysis".
+
+If we have a chunk of dynamically allocated RAM that will escape, but only for a short time, we could rewrite part of the program is what is called "continuation passing style" where instead of returning values the next step is passed as a function or procedure.  Then stack allocations can be used, since the stack frame will not get popped until the end of the continuation chain.  If the steps are chained with optomized tail-calls, then RAM use will only grow with allocations and will all be deallocated at the end of the chain.  This style, however, can be a big pain to code in, and is very similar to region-based memory manegement.
+
+== Regions ==
+
+The idea with regions is to allow allocations to escape for a fixed amount of time.  A "region" of RAM is allocated at some point, and then allocations can be made in that region that will get reclaimed when the whole region is reclaimed.  For example:
+
+	void somefunc(void) {
+		void *sf_region = new_region();
+		puts(replicate(sf_region, 'A', 42));
+		destroy_region(sf_region); /* Everything in the region is reclaimed */
+	}
+
+	char *make_a_string(void *region, char c, int n) {
+		char *s = malloc_region(region, sizeof(*s)*(n+1));
+		int i;
+
+		for(i = 0; i < n; i++) {
+			s[i] = c;
+		}
+		s[n] = '\0';
+
+		return s;
+	}
+
+Some compilers can infer the life of an allocation and assign it to a region automatically, thus getting rid of the need to manually `free` allocations.  This technique is called "region inference".  The largest potential pitfall is that if the region selected lasts longer than necessary, unused RAM allocations can live longer than they need to.
+
+== Reference Counting ==
+
+Really what we want is for allocation to be `free`d when they are no longer in use.  How can we know if an allocation is still in use?  We might try just keeping a count of how many uses it has:
+
+	#define NEW_REF(a) ((a->refcount++), (a))
+	#define CLR_REF(a) do { \
+		if((--(a)->refcount) < 1) free(a); \
+		(a) = NULL; \
+		} while(0)
+
+	struct int_ref {
+		int v;
+		unsigned int refcount;
+	};
+
+	struct int_ref *new_int_ref(int v) {
+		struct int_ref *ref = malloc(sizeof(*ref));
+		ref->v = v;
+		ref->refcount = 0;
+		return ref;
+	}
+
+When the number of references to an allocation (as determined by its `refcount` field, in this case) drops to zero, free it.  This has the disadvantage of being being unpredictable in terms of when a deallocation takes place, and also increasing the amount of work that must be done on even a simple pointer assignment.  Naive reference counting also cannot handle the following case:
+
+	struct some_ref {
+		struct some_ref *ref;
+		unsigned int refcount;
+	};
+
+	struct some_ref *mkcycle(struct some_ref *a) {
+		struct some_ref *b = malloc(sizeof(*b));
+		b->ref = NEW_REF(a);
+		a->ref = NEW_REF(b);
+		return b;
+	}
+
+Since `a` refers to `b` and vice-versa, they will both always have a `refcount` of at least 1.  This can be solved by having a cycle-detector, but that adds even more to the unpredictable deallocation time.
+
+== Tracing Garbage Collection ==
+
+A tracing garbage collector has the advantage of being the most straightforward to build and use.  A procedure is invoked periodically (often when new allocations are made) that uses some strategy to scan over all the RAM used by a program to check for allocations (which the garbage collector must keep track of) that are not referred to anywhere in the active RAM of the program.  Anything which is not referred to must not be needed anymore and can be deallocated.
+
+This strategy has the advantage of checking the actual condition that we care about (is the allocation being used?) and so makes it impossible to have so-called "dangling pointers" (pointers to deallocated RAM).  Tracing garbage collectors also have no trouble at all with reference cycles, since if all of the members of the cycle are in inactive RAM they will not come up in a scan of active RAM.  The sort of lifetime-leaks that can happen under region inference are also much less common (though the programmer must be careful not to hold references to allocations that are no longer needed).  No extra works needs to be done on pointer assignments or de-assignments.
+
+The downside to a tracing garbage collector is that it is even more unpredictable and time-expensive than reference counting.  Scanning all of active RAM is very expensive, and so various strategies for making this more efficient exist, however no matter how it is done it will remain the most time-expensive method of any of those we have discussed.

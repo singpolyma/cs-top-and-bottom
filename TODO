@@ -6,10 +6,6 @@ Lots of things.  Some I've thought of:
 * Add material about binary and two's complement to 1-botmom
 * Add material about pipelining to 2-bottom
 
-== C ==
-
-* Reference counting
-
 == Ruby ==
 
 * Memoized fibonacci
