@@ -1,0 +1,147 @@
+= Maps and Memoization =
+
+It's time to make our final shift up and down to another environment: Ruby.  Our example for this transition will be the computation of the n'th fibonnaci number, which is defined like this:
+
+	fibonnaci 1 = 1
+	fibonnaci 2 = 1
+	fibonnaci n = (fibonnaci $ n - 1) + (fibonacci $ n - 2)
+
+which in Ruby looks like this:
+
+	def fibonacci(n)
+		case n
+			when 0, 1
+				1
+			else
+				fibonacci(n - 1) + fibonacci(n - 2)
+		end
+	end
+
+This code, while correct, has a serious performance problem.  For each number we calculate, we must calculate two more.  This quickly leads to an explosion:
+
+	fibonacci(5)
+	fibonacci(4) + fibonacci(3)
+	(fibonacci(3) + fibonacci(2)) + (fibonacci(2) + fibonacci(1))
+
+You will also note, that we're duplicating a whole bunch of work!  We often have to compute the same numbers on both sides.
+
+== Maps ==
+
+Ruby has a nice data structure built in that will help us here called a "map" (or a "table").  There are just a datastructure that acts like `(k -> Maybe v)` or a "key-value store".  We use them like this:
+
+	some_map = {}
+	some_map["hello"] = 6
+	some_map["hello"] # This is 6
+
+You will note that Ruby uses very similar syntax to C for mutative assignment.  You can also create a map with values already in it:
+
+	{"key1" => 16, "key2" => 24}
+
+You may here these datastructures called "hashmaps" or "hashtables" or even just "hashes" because of the way they are often naively implemented:
+
+	def hash(some_key)
+		# Do something with some_key to produce a unique (conveniantly-sized) Int
+	end
+
+	backing_array = [] # Just like a C array, but it is whatever size we need
+	backing_array[hash(some_key)] = some_value
+
+Real implementations have to deal with what happens when two keys have the same hash (a "hash collision"), and the implementation of the hash function is very important.
+
+== Truthy and Falsy ==
+
+Ruby has `true` and `false` values, but conditionals will allow *any* value to be tested.  The special values `false` and `nil` are treated as False.  Everything else is treated as True.
+
+If you look up a key in a hash that does not exist, you will get the special value `nil`:
+
+	({})["not there"] # This is nil
+
+== Memoisation ==
+
+Memoisation (and the closely-related concept of "dynamic programming") is a technique for reducing known-duplicated computations in an algorithm by caching values as they get computed and then re-using the computed value later:
+
+	fib_cache = {0 => 1, 1 => 1}
+	def fibonacci(n)
+		return fib_cache[n] if fib_cache[n]
+
+		fib_cache[n] = fibonacci(n - 1) + fibonacci(n - 2)
+	end
+
+`return` works just like in C.  Ruby allows control structures to be placed on the end of the line if the body is just one expression:
+
+	X if Y ≡ if Y; X; end
+
+== Blocks, Procs, and Lambdas ==
+
+Ruby has anonymous procedures, which are not curried:
+
+	lambda {|arg1, arg2| arg1 + arg2}.call(1,1) # This is 2
+
+This syntax can actually be used on any procedure:
+
+	some_procedure {|arg1| arg1 + 12}
+
+This is called a "block", and you can capture it as an argument to your procedure like this:
+
+	def something(&blk)
+		blk.call(42)
+	end
+
+This allows for code like the following:
+
+	[1,2,3].each { |i|
+		print i
+	}
+
+But there's a question.  What should this code do:
+
+	def something(an_array)
+		sum = 0
+
+		an_array.each { |v|
+			return 12 if v > 3
+			sum += 1
+		}
+
+		sum
+	end
+
+Many people agree that the `return` should return "from the whole procedure".  But the `return` is *inside* an anonymous procedure, so shouldn't it return from that?  Ruby's solution to this question is called a `Proc`.  They are created like this:
+
+	proc {|arg1| arg1 + 12}
+
+A `Proc` is like any other anonymous procedure, but it closes over not just values that are in lexical scope when it is created, but also the return location.  A "lambda" is created with the `lambda` keyword and is a normal anonymous procedure (it does not close over the return location.)  A block passed to a procedure with no annotation is a `Proc`.
+
+== Hash Defaulting ==
+
+We have seen that in this code:
+
+	h = {}
+	h["what?"]
+
+That the expressing evaluates to the special value `nil`.  What if we wanted to change that?  It turns out, we can:
+
+	h = Hash.new { |h,k| 124 }
+	h["what?"] # This is 124
+
+The value, however, does not actually get added to the data structure:
+
+	h = Hash.new { |h,k| print "calculating"; 124 }
+	h["what?"] # This is 124, and "calculating" is printed
+	h["what?"] # This is 124, and "calculating" is still printed
+
+The datastructure and the key being accessed are both passed to the block to allow for changing this behaviour, if we want:
+
+	h = Hash.new { |h,k| print "calculating"; h[k] = 124 }
+	h["what?"] # This is 124, and "calculating" is printed
+	h["what?"] # This is 124, and "calculating" is NOT printed
+
+There are many uses for this, but one of the fun ones is memoization:
+
+	fibonacci = Hash.new { |fib_cache, n|
+		fib_cache[n] = fib_cache[n - 1] + fib_cache[n - 2]
+	}
+
+	# Set up the base cases
+	fibonacci[1] = 1
+	fibonacci[2] = 1

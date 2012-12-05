@@ -41,3 +41,7 @@ The general philosophy of this material is that Computer Scientists need to have
 * Typeclasses, including Functor
 * Applicative Functors and Monads
 * Dynamic Typing
+
+== Ruby ==
+
+* Memoized Fibonacci

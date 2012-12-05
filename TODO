@@ -1,9 +1,10 @@
 Lots of things.  Some I've thought of:
 
+* Endianness?  Harvard architecture?
+
 == Ruby ==
 
-* Memoized fibonacci
-* Classes and inheritance
+* Classes and inheritance (including encapsulation)
 * Duck typing and monkeypatching
 * Mix-in modules
 * Metaprogramming
