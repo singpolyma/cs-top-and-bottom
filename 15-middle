@@ -1,0 +1,125 @@
+= Classes and Inheritance =
+
+Ruby is a "dynamically typed" programming language, which is a fancy way of saying it only has one type, and that type is an extensible sum type.  This allows us to write code like the following:
+
+	def identity(x); x; end
+	a = [1, "hello", {"this" => 3, 5 => "that"}]
+	identity(a)
+	identity(123)
+
+Internally the exensible sum type is called `RB_VALUE` or `Value`, but you will likely never see that if you just write Ruby code.
+
+== Adding a Value Constructor ==
+
+If value in Ruby typed according to some extensible sum type, then how do we add value constructors to that type?  The following syntax shows adding a value constructor:
+
+	class Something
+	end
+
+That looks sort of like a unit type.  What if we wanted a product type?
+
+	class PseudoProduct
+		def initialize(a, b)
+			@a = a
+			@b = b
+		end
+	end
+
+We construct values like so:
+
+	PseudoProduct.new(12, 24)
+
+== Classes ==
+
+So what is a class, really?  Well, it is part of a particular program structure philosophy called Class-Based Object-Oriented Programming.  The core idea of all kinds of Object-Oriented Programming is keeping data values and code that operates on these values together in "objects".  Class-Based Object-Oriented Programming models this abstraction by having "classes" which are like templates for creating objects.  Data members of an object are called "instance variables" and code chunks that live in an object are called "methods".
+
+Ruby does not require instance variables to be defined in any way in the class definition, but instead provides a special syntax for accessing them.  Any name binding that starts with an `@` is treated as an instance variable on whatever object the current code chunk is evaluating in the context of.
+
+Ruby also allows an initialization procedure to be provided on a class.  When a new value is constructed using that class as a template, the arguments to the construction are passed to the `initialize` procedure to allow the object to set itself up.
+
+	class Animal
+		def initialize(name)
+			@name
+		end
+
+		def name
+			@name
+		end
+	end
+
+	Animal.new("Dave").name # This is "Dave"
+
+You can send a message to an object using the `.` syntax you see above.  In Ruby, these messages are always interpreted as requests to invoke the method by a given name in the context of the object.
+
+Every value in Ruby is an object, and all code has an object context.  In `Animal.new`, the class `Animal` is also an object and we invoke the `new` method to ask it to produce a new object based on its template.  When we define a procedure without a class context, we are defining it as a method in the global context, which is an object called `main`.
+
+== Inheritance ==
+
+Class-Based Object-Oriented programming also has a solution that it normally uses for ad-hoc polymorphism called "inheritance".  Inheritance is a bit less generic than typeclasses, and in a staticly typed environment is sometimes called "subtype polymorphism".  Essentially, inheritance allows a class to include methods from a "parent" or "superclass":
+
+	class Dog < Animal
+		def initialize(name)
+			super(name)
+		end
+
+		def bark
+			"woof"
+		end
+	end
+
+	d = Dog.new("Spot")
+	d.name # "Spot"
+	d.bark # "woof"
+
+Here we can invoke the `name` method on an object created from the `Dog` class because `Dog` inherits from `Animal`.  If we write a method with the same name as a method in the superclass, then the method of the subclass will be used instead.  The keyword `super` allows us to call the method in the superclass that has the same name as the current method.  We can also write a procedure which operates on any `Animal`:
+
+	def putsAnimalName(animal)
+		puts(animal.name)
+	end
+
+	putsAnimalName(Animal.new("Doug"))
+	putsAnimalName(Dog.new("Snippy"))
+
+== Encapsulation ==
+
+It can be useful to hide methods from the outside world:
+
+	class Cat < Animal
+		def initialize(name)
+			super(name)
+		end
+
+		def thoughts
+			if self.real_thoughts == "Hate all the humans"
+				"Love all the humans"
+			else
+				self.real_thoughts
+			end
+		end
+
+		protected
+
+		def real_thoughts
+			"Hate all the humans"
+		end
+	end
+
+The `self` keyword refers to the object that is the current context.
+
+Methods defined after the `protected` keyword cannot be invoked from the outside:
+
+	Cat.new("Patches").real_thoughts # This gives you an error
+
+But they can be used by subclasses:
+
+	class AlleyCat < Cat
+		def initialize(name)
+			super(name)
+		end
+
+		def thoughts
+			self.real_thoughts
+		end
+	end
+
+If you want to prevent this for some reason (there is a big debate over if this is ever a good idea) you can use `private` instead of `protected`.  If you want to define methods that can be called by anyone again you can use the keyword `public`.
