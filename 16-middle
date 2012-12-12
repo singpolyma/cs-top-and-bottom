@@ -1,0 +1,83 @@
+= Duck Typing and Monkeypatching =
+
+Recall our implementation of the extensible sum type:
+
+	data Dynamic = TypeRep ()
+
+to facilitate object message passing, the Ruby implementation of `RB_VALUE` is more like:
+
+	data RB_VALUE = TypeRep () (Map Symbol Method)
+
+Where a symbol is a string that has been "interned" (which means it is represented by a unique Int in the implementation for fast equality comparisons and lookups).  This is necessary because since everything has the same type, there is no way to do determine at load time what method implementations to use for any given object.  Since this is all determined at runtime, however, this enables the following:
+
+	class Duck
+		def quack
+			"Quack Quack"
+		end
+	end
+
+	class Mallard
+		def quack
+			"Quack, what?"
+		end
+	end
+
+	[Duck.new, Mallard.new].map {|x| x.quack} # ["Quack Quack", "Quack, what?"]
+
+This is called "duck typing" (because if it quacks like a duck, it must be a duck).  So ad-hoc polymorphism is possible even without direct class inheritance.  As long as an object responds to a message with a given name and arguments, you can send that message to that object.  This is rougly equivalent to a typeclass of the form:
+
+	class RespondsToMessasgeX a where
+		messageX :: a -> (...) -> IO ...
+
+Runtime "type checks" can even be performed against this:
+
+	Mallard.new.respond_to?(:quack) # true
+	Mallard.new.respond_to?(:bark)  # false
+
+== Sending Messages ==
+
+Another way to understand duck typing is to see that, in Ruby:
+
+	x.y(...) ≡ x.send(:y, ...)
+
+At least, mostly.  The `send` method does not do access-control checks, and so even `private` methods can be invoked by sending messages in this way.  And, of course, it cannot be syntactic sugar because there needs to be some way to call the `send` method itself.  Here is a way the `send` method might be implemented:
+
+	class Object
+		def initialize
+			@methods = {}
+		end
+
+		def send(msg, *args)
+			@methods[msg].call(*args) if @methods[msg]
+		end
+	end
+
+The `*args` pattern (called a "splat pattern") allows an arbitrary number of extra arguments to be passed to a method and captures them to an array.  Then we use the "splat operator" in the actual method call to turn the array back into a list of arguments.
+
+== Monkeypatching ==
+
+You would expect that if you tried to redefine `Object#send` like this, that the interpreter would give you an error.  After all, there is already a class named `Object`.  It turns out this is not the case.  Ruby allows you to "reopen" any existing class and add new methods.  For example, here is a common way of building a `Maybe` Monad equivalent for Ruby:
+
+	class Object
+		def try(msg, *args, &blk)
+			if blk
+				blk.call(self)
+			else
+				self.send(msg, *args)
+			end
+		end
+	end
+
+	class NilClass
+		def try(*args)
+			nil
+		end
+	end
+
+	{:a => {:b => 12}}.try(:[], :a).try(:[], :b) # 12
+	{:a => {:b => 12}}.try(:[], :a).try(:[], :c) # nil
+	{:a => {:b => 12}}.try(:[], :r).try(:[], :b) # nil
+
+By adding a method to `Object`, we add a default implementation of that method to every object.  By adding a method to `NilClass`, we just add it for the special value `nil`.
+
+This can be very powerful, but it can also be very dangerous.  If two libraries decide to add different implementations of the same method to the same class, only one of them will actually end up being the one that is used.  This is sometimes referred to as "namespace pollution".
