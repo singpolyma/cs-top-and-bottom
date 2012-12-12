@@ -46,7 +46,7 @@ Now `r0` is 42 again.  Question: what is `r1`?  It's 30, because we wrote a 30 i
 
 == Program Layout ==
 
-All of the computers we will be dealing with, and indeed most computer with which you are likely to ever interact, are so-called "stored program computers".  These computers have instructions to the machine stored off of the CPU at run-time in RAM.  Before a program starts running, the instructions that make up the program must be loaded into RAM at some location.  Locations in RAM are sometimes called "addresses".
+All of the computers we will be dealing with, and indeed most computer with which you are likely to ever interact, are so-called "stored program computers".  These computers have instructions to the machine stored off of the CPU at run-time in RAM.  So-called "Harvard Architecture" computers have two kinds of RAM: one for instructions and one for data.  We will only be dealing with so-called "Von Neumann" or "Princeton" architecture computers, which only have one kind of RAM that stores everything.  Before a program starts running, the instructions that make up the program must be loaded into RAM at some location.  Locations in RAM are sometimes called "addresses".
 
 The CPU has a special register called the "Program Counter" which holds the address of the next instruction it should execute.  This instruction is loaded in from RAM and then executed.  When an instruction is done being loaded, the program counter is incremented by the size of one instruction (so that it now holds the address of the next instruction).
 
