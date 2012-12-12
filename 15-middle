@@ -80,6 +80,8 @@ Here we can invoke the `name` method on an object created from the `Dog` class b
 	putsAnimalName(Animal.new("Doug"))
 	putsAnimalName(Dog.new("Snippy"))
 
+If a class does not list a superclass, then it will inherit from the standard class `Object`.
+
 == Encapsulation ==
 
 It can be useful to hide methods from the outside world:
