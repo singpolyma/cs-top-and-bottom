@@ -125,9 +125,13 @@ In fact, `Prelude` defines `Monad` in the following way:
 
 	class Monad m where
 		return :: a -> m a -- This is just pure
-		(>>=)  :: m a -> (a -> m b) -> m b
+		(>>=)  :: m a -> (a -> m b) -> m b -- This is (=<<) with the arguments flipped
 		(>>)   :: m a -> m b -> m b
 		x >> y = x >>= const y
+
+And defines `join` in terms of `(>>=)`:
+
+	join = (>>= id)
 
 === Laws ===
 
