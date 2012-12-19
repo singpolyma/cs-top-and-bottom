@@ -1,0 +1,114 @@
+= Mix-ins and Metaprogramming =
+
+Inheritance is an interesting code-reuse model, but what if we want to mix in more than one set of existing methods?  For example, if we have these classes:
+
+	class FilterEach
+		def filter(&blk)
+			v = self.class.new # self.class is our Class object
+
+			self.each do |x|
+				if blk.call(x)
+					v.push(x)
+				end
+			end
+
+			v
+		end
+	end
+
+	class MapEach
+		def map(&blk)
+			v = self.class.new
+
+			self.each do |x|
+				v.push(blk.call(x))
+			end
+
+			v
+		end
+	end
+
+	class SomeContainer
+		def each
+			# ...
+		end
+
+		def push
+			# ...
+		end
+	end
+
+How can we put the functionality of both `MapEach` and `FilterEach` onto `SomeContainer`?
+
+== Modules ==
+
+One thing you may notice about the `MapEach` and `FilterEach` classes is that they do not really represent a data structure of any kind.  They have no `initialize` method, and use no instance variables.  They're just a collection of methods.  Ruby has another structure for collections of methods, called a module:
+
+	module MapEach
+		def map(&blk)
+			# ...
+		end
+	end
+
+Methods in a module may be brought into scope by using the `Object#include` method:
+
+	include MapEach
+
+Which means you can include the methods into the context of a class:
+
+	class SomeContainer
+		include MapEachModule
+	end
+
+Which essentially adds the methods from the module to the class.  This is called "mixing in a module" and modules defined for just this purpose are called "mix-in modules".
+
+== Mix-ins and Inheritance ==
+
+A mix-in is very difficult to tell apart from inheritance, for example:
+
+	class SomeContainer < FilterEach
+		include MapEachModule
+	end
+
+	SomeContainer.new.is_a?(FilterEach) # true
+	SomeContainer.new.is_a?(MapEachModule) # true
+
+The biggest difference between the two models is that the `super` method does not dispatch to methods in a module.
+
+== Metaprogramming ==
+
+Metaprogramming is a term used for any code which essentially writes new code into a context based on existing code.  Our use of `self.class` above is an instance of "reflection", which is a very close cousin of metaprogramming.  We ask the `self` object what the class that it was created from was, so that we can create a new instance of the right class.
+
+Here is an example of metaprogramming:
+
+	v = # Some array
+	if v.first > v.last
+		def v.bigEnd
+			self.first
+		end
+	else
+		def v.bigEnd
+			self.last
+		end
+	end
+
+This defines a new method only on the specfic object.  Every object in Ruby has what is called a "metaclass", which holds any methods that exist only on that object and not in the class the object was built from.  You can also dynamically add methods to classes:
+
+	input = 8
+	Fixnum.class_eval {
+		define_method :plus_input, lambda {
+			self + input
+		}
+	}
+
+	8.plus_input # 16
+
+You can also simulate this behaviour by taking advantaged of the fact that Ruby calls a method named `method_missing` when there is an attempt to send a message that has no associated method:
+
+	class Hash
+		def method_missing(method_name, *args)
+			self[method_name]
+		end
+	end
+
+	({:a => 12}).a # 12
