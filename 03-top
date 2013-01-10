@@ -52,7 +52,7 @@ So no matter what we put in the `(...)`, the beta normal form of this program is
 
 	z
 
-Because the lambda abstraction ignores its argument and `z` is always the result.  So Applicative Order Reduction is not guarenteed to always give us beta normal form, even if there is one.
+Because the lambda abstraction ignores its argument and `z` is always the result.  So Applicative Order Reduction is not guaranteed to always give us beta normal form, even if there is one.
 
 We might consider a different strategy.  If Applicative Order Reduction is leftmost innermost, what about leftmost outermost?  This strategy is called Normal Order Reduction.  Returning to our first example:
 
@@ -65,6 +65,21 @@ So we see that this strategy can produce the same results as Applicative Order R
 	(λx.z)((λx.x x)(λx.x x))
 	z
 
-Because the leftmost outermost expression immidiately reduces to `z`, we never even look at the other expression, and so we get the correct beta normal form.
+Because the leftmost outermost expression immediately reduces to `z`, we never even look at the other expression, and so we get the correct beta normal form.
 
 It can be proved that Normal Order Reduction will *always* find beta normal form if one exists.  It can also be proven that any reduction strategy we use on a particular program will result in the same normal form expression, unless it fails to find a normal form expression at all.
+
+= The Halting Problem =
+
+We mentioned above that not every program has an equivalent β normal form.  Given some program, how can we tell if it does or not?
+
+Well, with the example above:
+
+	(λx.x x)(λx.x x)
+	(λx.x x)(λx.x x)
+
+We could think about writing a program that keeps track of the previous step of β-reduction and if the current program is the same as the last one, then we are not making progress and we know there is no equivalent β normal form.  What if a program switches back and forth between two forms?  Well, then keep track of two steps.  In general, for a program that returns to a form that is α-equivalent to an earlier form, that program will never reach β normal form under the given reduction strategy.  Since it can be proven that Normal Order Reduction will always find a normal form if one exists, then under Normal Order Reduction if we return to an earlier form, we know that there does not exist an equivalent normal form.
+
+This is great.  If we reduce under Normal Order Reduction and we reach a normal form, then one exists, and if we reach a form that is equivalent to an earlier step, then there does not exist a normal form.  What if we have not yet reached a normal form, but we have also not seen an earlier form.  Keep reducing?  For how long?
+
+The problem is that we have no guarantee that either of these conditions will be reached.  This problem is called "The Halting Problem" because it is the problem of computing whether or not a given program will "halt" (reach normal form) or not.  There exists a proof that the Halting Problem cannot be solved by a Turing-equivalent system for a general program.  Because of this, any problem for which it can be shown a problem equivalent to the Halting Problem must be solved as a subproblem is called "undecidable" or "uncomputable", because it cannot be computed by a Turing-equivalent system (and the Church–Turing thesis asserts that no more powerful system exists).
