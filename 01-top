@@ -44,7 +44,7 @@ and
 
 	(λy.y)
 
-represent the same program.  The idea is that the symbol we bind in a lambda abstraction doesn't matter, since it really just represents the symbol we are going to apply the abstraction to.  This matters because in order to really understand most useful reductions, we will need to be able to rename some things.
+represent the same program.  The idea is that the symbol we bind in a lambda abstraction doesn't matter, since it really just represents the program we are going to apply the abstraction to.  This matters because in order to really understand most useful reductions, we will need to be able to rename some things.
 
 By the same logic:
 
