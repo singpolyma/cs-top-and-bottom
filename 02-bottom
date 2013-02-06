@@ -67,7 +67,7 @@ Even if the assembler does not expose the pipelined nature of the CPU to the pro
 	b doing
 	mov r1, #1
 
-We do not want to execute that `mov` simultaneously with the `b`!  In fact, because of the branch, we do not want to execute the `mov` at all.  This means that the processor will have to "stall" the pipeline every time we branch.  That is, any further loads will have to be stopped until the branch can be completed (since until `pc` gets the new value written, and instruction loading is impossible).
+We do not want to execute that `mov` simultaneously with the `b`!  In fact, because of the branch, we do not want to execute the `mov` at all.  This means that the processor will have to "stall" the pipeline every time we branch.  That is, any further loads will have to be stopped until the branch can be completed (since until `pc` gets the new value written, instruction loading is impossible).
 
 All of this means that branching can be more expensive than other instructions (because it defeats pipelining).  We could rewrite our code like this:
 
