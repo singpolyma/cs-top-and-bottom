@@ -27,7 +27,7 @@ The values given to an instruction are often called "arguments" or "parametres".
 
 We can also add to a value:
 
-	mov r0, 30
+	mov r0, #30
 	add r0, r0, #12
 
 The `add` instruction takes the values from the second and third arguments, adds them, and puts the result into the register specified by the first argument.
