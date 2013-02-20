@@ -113,7 +113,7 @@ Of course, we would also need to modify `doing` to come back.
 		sub r1, r1, #1
 		cmp r1, #0
 		bne doing
-		b lr
+		mov pc, lr
 
 Now we can set r0 and r1 from anywhere in our code, and then cause `doing` to operate on them.  But what if we didn't want doing to modify r1?  What if we still need that value?  Well, we could just `mov r3, r1` or something, but what if we were using r3 for something?  `doing` can't know what registers the code that calls it is using, and even we as the programmer can't know for sure how we will use it in the future.  We could be careful to use only certain registers, but what if we needed those in a new place later on?  What if we had some code that needed almost *all* of the registers?
 

@@ -63,7 +63,7 @@ Just for good measure, let's write a reusable chunk of code that we can jump int
 		bne wait            # If not, go wait again
 
 		pop {r3, r4, r5}    # Restore registers
-		b lr                # Return to caller
+		mov pc, lr          # Return to caller
 
 == Interlude about the top ==
 

@@ -16,7 +16,7 @@ Let's now put together some of what we know to implement a factorial computation
 
 	done:
 		pop {r4,lr}    # Restore registers
-		b lr           # Return to caller
+		mov pc, lr     # Return to caller
 
 If you set `r0` to a value and then `bl factorial` you will end up with the factorial of that number back in `r0`.  You can see how we use `bl factorial` right inside this implementation to simulate recursion.  We have to push `r4` because we use it for temporary values and we have to push `lr` because it gets set by `bl`.
 
@@ -41,7 +41,7 @@ We can solve this be restructuring the code to use what is called a "tail call",
 
 	done:
 		pop {lr}       # Restore registers
-		b lr           # Return to caller
+		mov pc, lr     # Return to caller
 
 This version still grows the stack at each step, but now we don't need any values back except for the address of where to return to.
 
@@ -52,7 +52,7 @@ Every tail call can be "eliminated" by replacing it with something that does not
 	factorial:
 		cmp r0, #0     # Is the argument in r0 a 0?
 		moveq r0, r1   # If so, return the value so far in r0
-		beq lr         # lr was never modified, we return to the original caller
+		moveq pc, lr   # lr was never modified, we return to the original caller
 
 		mul r1, r1, r0 # Multiply value so far by current value and pass as r1
 		sub r0, r0, #1 # r0 - 1 is the new first argument
@@ -65,7 +65,7 @@ By replacing `bl factorial` with `b factorial` we can keep the original value of
 		mov r1, #1
 		bl factorial
 		pop {lr}
-		b lr
+		mov pc, lr
 
 You may observe that this, too, is a tail call, even though no real recursion simulation is going on.  So we can eliminate it as well:
 
