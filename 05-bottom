@@ -75,6 +75,6 @@ The messiest, but the most obvious, might be to extend the Untyped Lambda Calcul
 
 Another way might be to have a lambda abstraction which gets "called" by the computer with a parametre representing the computer hardware, and allowing applications of this parametre in different ways to result in different forms of hardware control.
 
-Probably the cleanest way would be to have a lambda abstraction wich gets "called" by the computer, and which produces as its result an encoding of what operations the program needs the harware to do.
+Probably the cleanest way would be to have a lambda abstraction which gets "called" by the computer, and which produces as its result an encoding of what operations the program needs the harware to do.
 
 All three of these strategies exist in real programming languages, and we will see more about some of them later.
