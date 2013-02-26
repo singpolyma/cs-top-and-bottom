@@ -6,12 +6,12 @@ We talked about the idea of a pointer breifly when we introduced the Stack Point
 
 So, say we had a chunk of RAM, and we wanted to give some code we are calling access to it.  We could, by convention, say that we will use register 0 to pass data into code we call, and then place the address there, like so:
 
-	# Put some values on the stack
+	/* Put some values on the stack */
 	mov r3, #3
 	mov r4, #4
 	mov r5, #5
 	push {r3,r4,r5}
-	# Make r0 "point" at the top of the stack
+	/* Make r0 "point" at the top of the stack */
 	mov r0, sp
 	# Call some_code
 	bl some_code
@@ -32,13 +32,13 @@ Well, an address in RAM is really just a number.  Items next to the first item w
 	sum_it_up:
 		cmp r1, #0
 		beq done_sum_it_up
-		# Load the current item into r4
+		/* Load the current item into r4 */
 		ldr r4, [r0, #0x0]
-		# Add the value to r3
+		/* Add the value to r3 */
 		add r3, r3, r4
-		# Increment r0 to look at the next item
+		/* Increment r0 to look at the next item */
 		add r0, r0, #0x4
-		# Decrement r1 to keep track of how many are left
+		/* Decrement r1 to keep track of how many are left */
 		sub r1, r1, #1
 		b sum_it_up
 	done_sum_it_up:
