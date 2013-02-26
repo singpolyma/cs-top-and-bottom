@@ -104,7 +104,7 @@ This explains why our 0 value is also a function:
 
 	(λh. h ((λh. h ((λx. z) s)) s))
 
-So, at each layer we're appyling some function `h` to the inner program.  What is `h`?  Well, you can see that at the inner layer is it `s`.  This starts to look very much like the structure of a Natural, repeatedly applying some function to some inner value.  The big difference comes at the innermost value, where instead of applying `s` to `z` we simply ignore `s` and produce `z` directly.  So we repeatedly apply some function to a value at every layer except on, reducing the number of applications by one!  The outer layer, however, still needs to be applied to some function to get the value out.  We will use the handy `(λx.x)` for this.  Adding the right outer abstractions to take in a Natural and produce a Natural we get:
+So, at each layer we're appyling some function `h` to the inner program.  What is `h`?  Well, you can see that at the inner layer is it `s`.  This starts to look very much like the structure of a Natural, repeatedly applying some function to some inner value.  The big difference comes at the innermost value, where instead of applying `s` to `z` we simply ignore `s` and produce `z` directly.  So we repeatedly apply some function to a value at every layer except one, reducing the number of applications by one!  The outer layer, however, still needs to be applied to some function to get the value out.  We will use the handy `(λx.x)` for this.  Adding the right outer abstractions to take in a Natural and produce a Natural we get:
 
 	λn. (λs.λz. (n (λg.λh. h (g s)) (λx. z)) (λx. x))
 
