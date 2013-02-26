@@ -47,23 +47,23 @@ So the resulting bit is 1 if both bits in the same position were 1, and 0 otherw
 Just for good measure, let's write a reusable chunk of code that we can jump into to print any string of characters.  This code will assume that the address of the first character is in r0, that there are no 0s in the string, and that there will be a 0 after the end of the string.  You'll note that we've seen blocks of RAM similar to this before: this is a linearly packed block of RAM, also called an array.
 
 	print:
-		push {r3, r4, r5}   # Save registers we overwrite
-		ldr r3, =0x101f1000 # The address of the serial port
-		ldr r4, =0x101F1006 # The address of the information about the serial port
+		push {r3, r4, r5}   /* Save registers we overwrite */
+		ldr r3, =0x101f1000 /* The address of the serial port */
+		ldr r4, =0x101F1018 /* The address of the information about the serial port */
 	wait:
-		ldr r5, [r4, #0]    # Check serial port information ("flags")
-		tst r5, #0x20       # Bit mask
-		bne wait            # Keep waiting?
+		ldr r5, [r4, #0]    /* Check serial port information ("flags") */
+		tst r5, #0x20       /* Bit mask */
+		bne wait            /* Keep waiting? */
 
-		ldr r5, [r0, 0]     # Get the next byte
-		str r5, [r3, #0]    # Write that byte
-		add r0, r0, #1      # Increment pointer by 1 byte
+		ldr r5, [r0, #0]    /* Get the next byte */
+		str r5, [r3, #0]    /* Write that byte */
+		add r0, r0, #1      /* Increment pointer by 1 byte */
 
-		cmp r0, #0x0        # Is this byte a 0?
-		bne wait            # If not, go wait again
+		cmp r0, #0x0        /* Is this byte a 0? */
+		bne wait            /* If not, go wait again */
 
-		pop {r3, r4, r5}    # Restore registers
-		mov pc, lr          # Return to caller
+		pop {r3, r4, r5}    /* Restore registers */
+		mov pc, lr          /* Return to caller */
 
 == Interlude about the top ==
 
