@@ -26,7 +26,7 @@ And on QEMU that will probably work.  On a real computer, however, that would no
 	ldr r0, =0x101f1000
 	str #0x61, [r0, #0]
 
-	ldr r4, =0x101F1006
+	ldr r4, =0x101F1018
 wait:
 	ldr r5, [r4, #0]
 	tst r5, #0x20
@@ -40,7 +40,7 @@ This code uses a new instruction, `tst`, which performs a bitwise AND and change
 	000 & 111 = 000
 	010 & 110 = 010
 
-So the resulting bit is 1 if both bits in the same position were 1, and 0 otherwise.  `tst` will perform this operation, and then instructions with `ne` on the end will only run if the result was not all 0s.  In this case we're using it with 0x20.  What does that do?  0x20 is 00100000 in binary, so the result will be all 0s unless the 3rd-highest bit of the byte we're comparing against is a 1.  This sort of technique is called a "bit mask".  Essentially, each bit of the number we load from 0x101F1006 represents some sort of True or False value.  We only care about one of these values, so we "mask" it off.  The value we get is documented to be the bit that will be set if the serial port is busy sending, so if we wait until it is 0 we will be sure the serial port is ready before we send the next byte.
+So the resulting bit is 1 if both bits in the same position were 1, and 0 otherwise.  `tst` will perform this operation, and then instructions with `ne` on the end will only run if the result was not all 0s.  In this case we're using it with 0x20.  What does that do?  0x20 is 00100000 in binary, so the result will be all 0s unless the 3rd-highest bit of the byte we're comparing against is a 1.  This sort of technique is called a "bit mask".  Essentially, each bit of the number we load from 0x101F1018 represents some sort of True or False value.  We only care about one of these values, so we "mask" it off.  The value we get is documented to be the bit that will be set if the serial port is busy sending, so if we wait until it is 0 we will be sure the serial port is ready before we send the next byte.
 
 == Sending a whole string ==
 
