@@ -136,7 +136,7 @@ is the same as this:
 
 Make is very well-suited to building C programs, but it lacks some features that would make it even more flexible.  Another tool that we might use for the task is called `redo`.  This tool's syntax is entirely that of a POSIX shell script, which is very useful, and in fact `redo` has an implementation written as a POSIX shell script that allows projects to be built on virtually any computer.  The use of an existing programming language as syntax makes `redo` very flexible, but you do not need to be very familiar with POSIX shell to build a simple project.
 
-`redo` does not have any built-in feature specifically for building C, so we will create a file named default.o.do to build our *.o files:
+`redo` does not have any built-in features specifically for building C, so we will create a file named default.o.do to build our *.o files:
 
 	redo-ifchange "$2.c"
 	gcc -o "$3" -c "$2.c"
