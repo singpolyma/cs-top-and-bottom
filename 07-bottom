@@ -65,7 +65,7 @@ If we have named procedures, and these procedures can take arguments, then we ca
 		}
 	}
 
-The `else` segment is only run if the expression given to the if *is* equal to 0.
+The `else` segment is only run if the *expression* given to the if is equal to 0.
 
 This works, but we've got rid of our tail call, and most C compilers will not optomize that away for us, so this implementation will grow the stack for each step.  Let's go back to a tail call:
 
@@ -94,7 +94,7 @@ To represent the tail-call elimination we turn to another C construct, the while
 		return acc;
 	}
 
-This loop just run the code inside over and over.  The `break` will cause the loop to stop and the `continue` will cause the loop to move on to the next iteration right away (it's like a `goto` to the top of the loop).  In this case the `continue` is not needed because nothing happens after that and the loop will keep going anyway.
+This loop just runs the code inside over and over.  The `break` will cause the loop to stop and the `continue` will cause the loop to move on to the next iteration right away (it's like a `goto` to the top of the loop).  In this case the `continue` is not needed because nothing happens after that and the loop will keep going anyway.
 
 The `break` is also not needed, for two different reasons.  One is that we could just put the `return` right into the loop.  The other is that we could replace the `while(1)` with `while(n != 0)`, since a while loop only continues to loop while the expression in parenthesis does not evaluate to 0, and `!=` only evaluates to 0 when the two values are equal:
 
@@ -114,8 +114,8 @@ You might see some parallels between some of this code and the Haskell code.  Wh
 
 translates to roughly the following assembly:
 
-	mul r1, r1, r0 # n - 1
-	sub r0, r0, #1 # acc * n
+	mul r1, r1, r0 /* n - 1 */
+	sub r0, r0, #1 /* acc * n */
 	bl factorial
 
 The inner expressions have their instructions placed first, so that the data will be in the right places when the procedure runs.  So this is roughly equivalent to an innermost, or "strict", evaluation order.
