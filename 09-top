@@ -26,7 +26,7 @@ A unit type can be useful, but you don't often care which one it is.  `Prelude` 
 
 == Sum Type ==
 
-If we think of types as sets of values, then a unit type is a set of multiple elements.  That is, it is the sum (or union) of multiple other types.  For example:
+If we think of types as sets of values, then a sum type is a set of multiple elements.  That is, it is the sum (or union) of multiple other types.  For example:
 
 	data Weekday = Monday | Tuesday | Wednesday | Thursday | Friday
 	data Weekend = Saturday | Sunday
@@ -74,7 +74,7 @@ Haskell has a feature designed for just such a use called type variables:
 
 	data Box a = Box a
 
-This does not define a type, but instead a whole set of types.  You can put anything you want in for the a, so:
+This does not define a type, but instead a whole set of types.  You can substitute any type you want for the a, so:
 
 	> :t Box True
 	Box True :: Box Bool
@@ -105,7 +105,7 @@ as expected.
 
 == Type Signatures ==
 
-Sometimes we do not want to rely on type inference.  There are multiple reasons this might be.  One is that the inferred type might be more general than we want; we may want to restrict a function to operate on only specific types even if there is nothing structurally about them that restricts how they could be used.  Another reason is for refactoring.  If we know what the type should be, we can write it down, and then if we change the code in the future the compiler can tell us if we have accidentally changed the code so that it no longer matches the type.
+Sometimes we do not want to rely on type inference.  There are multiple reasons this might be.  One is that the inferred type might be more general than we want; we may want to restrict a function to operate on only specific types even if there is nothing that structurally restricts how they could be used.  Another reason is for refactoring.  If we know what the type should be, we can write it down, and then if we change the code in the future the compiler can tell us if we have accidentally changed the code so that it no longer matches the type.
 
 Types are written down using what are called "type signatures".  For example:
 

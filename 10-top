@@ -1,6 +1,6 @@
 = Sorting and Algorithm Analysis =
 
-We are now going to investigate the contstruction of a more involved algorithm that solves a common problem: sorting.  Haskell's extensive standard library of course contains many implementations of sorting algorithms already, but the process of constructing one will be instructive.  It will also allow us to reason about the efficiency of the algorithm.
+We are now going to investigate the contstruction of a more involved algorithm that solves a common problem: sorting.  Haskell's extensive standard library of course contains implementations of sorting algorithms already, but the process of constructing one will be instructive.  It will also allow us to reason about the efficiency of the algorithm.
 
 == Type Signature ==
 
@@ -55,7 +55,7 @@ Both an empty list and a list with only one element are already sorted.  Now wha
 		where
 		(lhs, rhs) = split xs
 
-We recursively sort the left and right hand sides of the split list, and then… what?  We `merge`.  This algorithm is often called "merge sort" because of this.  We need some  way to take two sorted lists (the sorted left and right sides) and "merge" them into a single list that is still sorted.  Again we start by writing down the type signature for `merge`:
+We recursively sort the left and right hand sides of the split list, and then… what?  We `merge`.  This algorithm is often called "merge sort" because of this.  We need some way to take two sorted lists (the sorted left and right sides) and "merge" them into a single list that is still sorted.  Again we start by writing down the type signature for `merge`:
 
 	merge :: (a -> a -> Bool) -> [a] -> [a] -> [a]
 
@@ -76,7 +76,7 @@ When `x` is "before" `y`, according to the ordering described by the comparison 
 
 The run time of this whole algorithm is much more complex than the analysis we did for `split`.  You should be able to see that `merge` does just one pass over the input (sometimes called "linear time" because of the form of the function `n`).  So the runtime is:
 
-	T(n) = time for split) + (time for recursion) + (time for merge)
+	T(n) = (time for split) + (time for recursion) + (time for merge)
 
 Which is:
 
@@ -90,4 +90,4 @@ This sort of equation can be a pain to solve in general, but what if we only car
 
 	T(n) ~ O(n*log(n))
 
-It can, in fact, be proved that general sorting is always at least `O(n*log(n))` in the worst case.
+It can, in fact, be proved that sorting using a comparison functionis always at least `O(n*log(n))` in the worst case.

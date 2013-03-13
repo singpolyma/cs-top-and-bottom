@@ -73,7 +73,7 @@ In this simple case, the heap memory is not that useful, but because the memory 
 
 == free ==
 
-What about when we're done with some reserved RAM?  We should tell the OS that we are done with it, so that other programs can be allowed to use it.  If we fail to relese some reserved heap RAM, and instead of hold on to it forever, that is called a memory leak.
+What about when we're done with some reserved RAM?  We should tell the OS that we are done with it, so that other programs can be allowed to use it.  If we fail to relese some reserved heap RAM, and instead hold on to it forever, that is called a memory leak.
 
 	#include <stdlib.h>
 	#include <stdio.h>
@@ -91,11 +91,11 @@ What about when we're done with some reserved RAM?  We should tell the OS that w
 		}
 	}
 
-Besides the danger of memory leaks, we see here another possible danger of doing our own memory management.  If we free some RAM we must be careful not to use any of the pointers that may be pointing at that RAM, because the RAM may contain anything.
+Besides the danger of memory leaks, we see here another possible danger of doing our own memory management.  If we free some RAM we must be careful not to use any of the pointers that may be pointing at that RAM, because the RAM may be in use by something else.
 
 == Memory Protection ==
 
-Besides the fact that unreserved RAM main contain anything, the OS may actually prevent us from accessing it.  This is done to prevent one program from corrupting the RAM being used by another one.  For example, this program will crash on almost any OS:
+Besides the fact that unreserved RAM may be in use elsewhere, the OS may actually prevent us from accessing it.  This is done to prevent one program from corrupting the RAM being used by another one.  For example, this program will crash on almost any OS:
 
 	#include <stdlib.h>
 	#include <stddef.h>

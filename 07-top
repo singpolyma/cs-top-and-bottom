@@ -79,16 +79,16 @@ When coding in a high-level language, it can be possible to consider this sort o
 
 That said, let's rewrite this function in a tail recursive fashion as an excersize:
 
-	let factorial' 0 acc = acc; factorial n acc = factorial (pred n) (n * acc)
-	let factorial n = factorial n 1
+	let factorial' 0 acc = acc; factorial' n acc = factorial' (pred n) (n * acc)
+	let factorial n = factorial' n 1
 
 Is this the best way to write that?  Well, what evaluation strategy are we using?  By default, Haskell uses an outermost evaluation strategy (similar to, but different from, Normal Order Reduction).  So let's see how this code reduces for n at 5:
 
-	factorial 4 (5 * 1)
-	factorial 3 (5 * 4 * 1)
-	factorial 2 (5 * 4 * 3 * 1)
-	factorial 1 (5 * 4 * 3 * 2 * 1)
-	factorial 0 (5 * 4 * 3 * 2 * 1 * 1)
+	factorial' 4 (5 * 1)
+	factorial' 3 (5 * 4 * 1)
+	factorial' 2 (5 * 4 * 3 * 1)
+	factorial' 1 (5 * 4 * 3 * 2 * 1)
+	factorial' 0 (5 * 4 * 3 * 2 * 1 * 1)
 	(5 * 4 * 3 * 2 * 1 * 1)
 	20 * 3 * 2 * 1 * 1
 	60 * 2 * 1 * 1
