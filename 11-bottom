@@ -31,7 +31,7 @@ What is the `void *`?  How can we point to nothing?  Well, since every pointer v
 		lst = cons(&a, cons(&b, cons(&c, NULL)));
 
 		iter = lst;
-		for(iter = lst; *iter; iter = iter->next) {
+		for(iter = lst; iter; iter = iter->next) {
 			printf("%d\n", *(int*)(iter->data));
 		}
 
