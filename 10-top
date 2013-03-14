@@ -36,7 +36,7 @@ The `O(n)` is also sometimes called the "asymptotic running time", because as th
 	split :: [a] -> ([a], [a])
 	split xs = go xs xs
 		where
-		go (y:ys) (_:_:zs) = let (us, vz) = go yz zs in (y:us, vs)
+		go (y:ys) (_:_:zs) = let (us, vs) = go ys zs in (y:us, vs)
 		go ys _ = ([], ys)
 
 In this version, we duplicate the list, and then recurse over both copies simultaneously.  If the first list still has elements and (more importantly) the second list still has at least two elements, we take one element from the first list and drop two elements from the second one.  In this way, we "count by twos" through the entire list until the second list does not have two elements left in it.  At that point, because we took one element from the first list for every two elements in the second list, the remainder of the first list will be the second half of the list.  This version of `split` makes only one pass over the input.
@@ -90,4 +90,4 @@ This sort of equation can be a pain to solve in general, but what if we only car
 
 	T(n) ~ O(n*log(n))
 
-It can, in fact, be proved that sorting using a comparison functionis always at least `O(n*log(n))` in the worst case.
+It can, in fact, be proved that sorting using a comparison function is always at least `O(n*log(n))` in the worst case.
