@@ -76,7 +76,7 @@ As with Functors, there are some laws an Applicative instance must obey in order
 		pure = const
 		f <*> g = (\x -> f x (g x))
 
-The instance for `[]` is certainly not the only possible one, but it is a very useful one.  It applied each function from the left to each value from the right and concatenates all the results into a single list, that is, it performs the cartesian product of the functions on the left and the values on the right.
+The instance for `[]` is certainly not the only possible one, but it is a very useful one.  It applies each function from the left to each value from the right and concatenates all the results into a single list, that is, it performs the cartesian product of the functions on the left and the values on the right.
 
 The instance for `((->) a)` is particularly interesting.  `pure` needs to lift a value into the context of being the return value of a function.  `const` is exactly the function that takes any input value and produces the gives output value:
 
@@ -103,7 +103,7 @@ We have no way to lift a function that takes values that are not in any context 
 
 	fmap func1 :: (Functior f) => f a -> f (f b)
 
-No matter what we do, we will end up double-wrapping the return value in two layers of context.  One intuition is to provide a function for joining these layers:
+No matter what we do, we will end up double-wrapping the return value in two layers of context.  Our intuition is to provide a function for joining these layers:
 
 	class (Applicative f) => Monad f where
 		join :: f (f a) -> f a
@@ -112,7 +112,7 @@ This would allow us to write the above as:
 
 	join (func2 <$> func1 someA) :: (Monad m) => m c
 
-However this gets awkwark pretty fast:
+However this gets awkward pretty fast:
 
 	join (func3 <$> (join (func2 <$> func1 someA)))
 
