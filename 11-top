@@ -1,6 +1,6 @@
 = Type Classes =
 
-There's something a little bit unsatisfying about our sort function.  Most types only have one way, or one very common way, to compare them for ordering, but our function requires the user to pass this in every time.  What if we had relied of many such functions?  The user could perhaps define records full of functions, one record for each type, and then always pass those along when needed.  It turns out that Haskell has feature called typeclasses to help with exactly this sort of situation.
+There's something a little bit unsatisfying about our sort function.  Most types only have one way, or one very common way, to compare them for ordering, but our function requires the user to pass this in every time.  What if we had relied on many such functions?  The user could perhaps define records full of functions, one record for each type, and then always pass those along when needed.  It turns out that Haskell has feature, called typeclasses, to help with exactly this sort of situation.
 
 Typeclasses are a form of ad-hoc polymorphism (also called "overloading") that allow the implementation of a set of functions to be parameterised over a single type variable.  Consider the following transformation of our sort function:
 
@@ -61,7 +61,7 @@ The type variable in a typeclass can itself be restricted to be a member of a ty
 		max x y
 			| x <= y    =  y
 			| otherwise =  x
-	    min x y
+		min x y
 			| x <= y    =  x
 			| otherwise =  y
 
