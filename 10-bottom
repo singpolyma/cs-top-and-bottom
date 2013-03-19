@@ -99,8 +99,8 @@ What about product types?  How can we implement those?  You might think about pa
 Luckily, C has syntax for exactly this:
 
 	struct person {
-		int   age;
-		int   height;
+		int age;
+		int height;
 	};
 
 These can be allocated on the stack:
