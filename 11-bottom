@@ -47,7 +47,7 @@ The `for` construct here is very similar to the `while` loops we've seen before.
 
 == Doubly-linked ==
 
-The lists we've seen so far are also called singly-linked lists.  This is because you can only traverse them on one direction: forwards.  Given any particular cell you can only see cell that come after it.  What if we wanted to be able to go in both directions?
+The lists we've seen so far are also called singly-linked lists.  This is because you can only traverse them on one direction: forwards.  Given any particular cell you can only see cells that come after it.  What if we wanted to be able to go in both directions?
 
 	struct dbl_list {
 		void *data;
@@ -91,7 +91,7 @@ The lists we've seen so far are also called singly-linked lists.  This is becaus
 		/* WARNING: do not let a, b, c go out of scope */
 		lst = cons(&a, cons(&b, cons(&c, NULL)));
 
-		prent_prev_next_int(lst->next);
+		print_prev_next_int(lst->next);
 
 		/* You should free the list */
 		return EXIT_SUCCESS;
