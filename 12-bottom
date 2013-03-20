@@ -13,7 +13,7 @@ And the assembler replaces each label with the address the label represents.  In
 	ldr r0, =somelabel
 	bl r0
 
-What is `r0` in this case?  It is storing an address in RAM, so it must be some kind of pointer.  We will call pointers to procedure entry points "procedure pointers" (though they are sometimes called "function pointers", from the observation that procedures can be used in a similar way to functions).  A variable of a procedure pointer type in C is describe in the same way as a prodecure declaration, but with an extra set of parenthesis and an asterisk:
+What is `r0` in this case?  It is storing an address in RAM, so it must be some kind of pointer.  We will call pointers to procedure entry points "procedure pointers" (though they are sometimes called "function pointers", from the observation that procedures can be used in a similar way to functions).  A variable of a procedure pointer type in C is described in the same way as a prodecure declaration, but with an extra set of parenthesis and an asterisk:
 
 	int (*foo)(int, int);
 
@@ -24,7 +24,7 @@ declares a procedure pointer named `foo` which points at a procedure taking two 
 In a low-level language, a more fundamental building block than a fold is called an "iterator":
 
 	void each(struct list *node, void (*f)(void *)) {
-		for(; *node, node = node->next) {
+		for(; node; node = node->next) {
 			f(node->data);
 		}
 	}
@@ -32,7 +32,7 @@ In a low-level language, a more fundamental building block than a fold is called
 Fold is certainly possible:
 
 	void *foldl(void *(*f)(void *, void *), void *z, struct list *node) {
-		for(; *node, node = node->next) {
+		for(; node; node = node->next) {
 			z = f(z, node->data);
 		}
 		return z;
@@ -41,7 +41,7 @@ Fold is certainly possible:
 But using this is an excersize in memory management.  An interesting alternative to `map` that gets around this is the in-place `map`:
 
 	void map_inplace(void *(*f)(void *), struct list *node) {
-		for(; *node, node = node->next) {
+		for(; node; node = node->next) {
 			node->data = f(node->data);
 		}
 	}
