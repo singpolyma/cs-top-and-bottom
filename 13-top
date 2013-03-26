@@ -95,7 +95,7 @@ So now we have all the tools we need to build our extensible sum type:
 	fromDynamic (Dynamic typ val) =
 		case unsafeCoerce val of
 			r | typ == typeOf r -> Just r
-			  | otherwise = Nothing
+			  | otherwise -> Nothing
 
 	dynTypeRep :: Dynamic -> TypeRep
 	dynTypeRep (Dynamic typ _) = typ
