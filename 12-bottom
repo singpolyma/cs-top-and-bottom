@@ -56,7 +56,7 @@ Which has the disadvantage of destroying the original list in the process.  You 
 
 	map_inplace(&add_one, some_list); /* Put this where you want to do the map */
 
-Even this has a whole bunch of memory management questions.  It turns out the easiest thing in many cases is to go back to the raw iterator:
+Even this has a whole bunch of memory management questions.  This is why, for low-level languages, the fundamental building block really is the iterator:
 
 	void add_one_inplace(void *x) {
 		int *r = (int *)x;

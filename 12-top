@@ -99,7 +99,7 @@ We now consider the following situation:
 	func1 someA :: (Applicative f) => f b
 	func2 <$> func1 someA :: (Applicative f) => f (f c)
 
-We have no way to lift a function that takes values that are not in any context but returns a value in a context:
+We have no way to lift a function that "adds" a context:
 
 	fmap func1 :: (Functior f) => f a -> f (f b)
 
@@ -152,7 +152,7 @@ Now we can write the laws as:
 
 === Examples ===
 
-I will show you the instances in terms of both `join` (which is not actually part of the Monad class in Prelude) and `>>=`.
+I will show you the instances in terms of both `join` (which is not actually part of the Monad typeclass in Prelude) and `>>=`.
 
 	instance Monad Maybe where
 		join (Just (Just x)) = Just x
@@ -188,7 +188,7 @@ If the parse fails, or the find fails, this whole thing is `Nothing`, otherwise 
 
 === Do notation ==
 
-Code like the above is very common when dealing with monads, so for when you have very deeply nested lambdas in order to capture value in names, you can use this synatactic sugar instead:
+Code like the above is very common when dealing with monads, so you may have very deeply nested lambdas in order to name values.   You can use this synatactic sugar instead:
 
 	do
 		ast <- parseMayFail
