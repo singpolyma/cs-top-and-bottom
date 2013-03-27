@@ -31,11 +31,13 @@ This is not valid according to the C standard, but we can imagine it being compi
 		bl memcpy
 
 		mov r0, sp
-		bl r5
+		mov lr, pc
+		sub lr, lr, #4
+		mov pc, r5
 
 		sub sp, sp, r3
 		pop {r1, r3, r4, r5}
-		b lr
+		mov pc, lr
 
 Compilers are sometimes able to detect when a heap allocation does not "escape" from the stack frame where it is first allocated (such as by being returned) and can transform such allocations to stack allocations.  This technique is called "escape analysis".
 
