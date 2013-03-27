@@ -11,7 +11,7 @@ The first argument is a function type.  How can we do this in C?  Well, how do p
 And the assembler replaces each label with the address the label represents.  In fact we could implement a procedure call like this:
 
 	ldr r0, =somelabel
-	bl r0
+	mov pc, r0
 
 What is `r0` in this case?  It is storing an address in RAM, so it must be some kind of pointer.  We will call pointers to procedure entry points "procedure pointers" (though they are sometimes called "function pointers", from the observation that procedures can be used in a similar way to functions).  A variable of a procedure pointer type in C is described in the same way as a prodecure declaration, but with an extra set of parenthesis and an asterisk:
 
