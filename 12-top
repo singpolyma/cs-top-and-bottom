@@ -162,8 +162,8 @@ I will show you the instances in terms of both `join` (which is not actually par
 		(Just x) >>= f = f x
 
 	instance Monad (Either a) where
-		join (Right (Right x)) = Right x
-		join x                 = x -- x is some (Left y)
+		join (Right x) = x
+		join (Left  x) = Left x
 
 		(Left x) >>= f = Left x
 		(Right x) >>= f = f x
