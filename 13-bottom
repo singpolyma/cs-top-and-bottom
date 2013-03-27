@@ -39,7 +39,7 @@ This is not valid according to the C standard, but we can imagine it being compi
 		pop {r1, r3, r4, r5}
 		mov pc, lr
 
-Compilers are sometimes able to detect when a heap allocation does not "escape" from the stack frame where it is first allocated (such as by being returned) and can transform such allocations to stack allocations.  This technique is called "escape analysis".
+Compilers can be built to sometimes detect when a heap allocation does not "escape" from the stack frame where it is first allocated (such as by being returned) and transform such allocations to stack allocations.  This technique is called "escape analysis".
 
 If we have a chunk of dynamically allocated RAM that will escape, but only for a short time, we could rewrite part of the program is what is called "continuation passing style" where instead of returning values the next step is passed as a function or procedure.  Then stack allocations can be used, since the stack frame will not get popped until the end of the continuation chain.  If the steps are chained with optomized tail-calls, then RAM use will only grow with allocations and will all be deallocated at the end of the chain.  This style, however, can be a big pain to code in, and is very similar to region-based memory manegement.
 
