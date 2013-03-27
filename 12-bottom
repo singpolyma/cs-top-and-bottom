@@ -38,7 +38,7 @@ Fold is certainly possible:
 		return z;
 	}
 
-But using this is an excersize in memory management.  An interesting alternative to `map` that gets around this is the in-place `map`:
+But using this is an exercize in memory management.  An interesting alternative to `map` that gets around this is the in-place `map`:
 
 	void map_inplace(void *(*f)(void *), struct list *node) {
 		for(; node; node = node->next) {
@@ -54,7 +54,7 @@ Which has the disadvantage of destroying the original list in the process.  You 
 		return r; /* You'll have to free this at some point. */
 	}
 
-	map(&add_one, some_list); /* Put this where you want to do the map */
+	map_inplace(&add_one, some_list); /* Put this where you want to do the map */
 
 Even this has a whole bunch of memory management questions.  It turns out the easiest thing in many cases is to go back to the raw iterator:
 
@@ -90,8 +90,8 @@ The search we have implemented is called "linear search", beacuse it has a linea
 What if the array were already sorted?  We could then check if the element were in the first or second half of the array, by comparing with the centre element.
 
 	void *bsearch(const void *key, const void *base,
-	             size_t length, size_t item_size,
-	             int (*compar)(const void *, const void *)) {
+	              size_t length, size_t item_size,
+	              int (*compar)(const void *, const void *)) {
 		const char *array = base; /* Use char so that arithmetic is by 1s */
 		if(length < 1) {
 			return NULL; /* Not found */
