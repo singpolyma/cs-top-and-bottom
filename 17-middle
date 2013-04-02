@@ -44,7 +44,7 @@ How can we put the functionality of both `MapEach` and `FilterEach` onto `SomeCo
 
 One thing you may notice about the `MapEach` and `FilterEach` classes is that they do not really represent a data structure of any kind.  They have no `initialize` method, and use no instance variables.  They're just a collection of methods.  Ruby has another structure for collections of methods, called a module:
 
-	module MapEach
+	module MapEachModule
 		def map(&blk)
 			# ...
 		end
@@ -52,7 +52,7 @@ One thing you may notice about the `MapEach` and `FilterEach` classes is that th
 
 Methods in a module may be brought into scope by using the `Object#include` method:
 
-	include MapEach
+	include MapEachModule
 
 Which means you can include the methods into the context of a class:
 
