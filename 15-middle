@@ -39,7 +39,7 @@ Ruby also allows an initialization procedure to be provided on a class.  When a 
 
 	class Animal
 		def initialize(name)
-			@name
+			@name = name
 		end
 
 		def name
@@ -55,7 +55,7 @@ Every value in Ruby is an object, and all code has an object context.  In `Anima
 
 == Inheritance ==
 
-Class-Based Object-Oriented programming also has a solution that it normally uses for ad-hoc polymorphism called "inheritance".  Inheritance is a bit less generic than typeclasses, and in a staticly typed environment is sometimes called "subtype polymorphism".  Essentially, inheritance allows a class to include methods from a "parent" or "superclass":
+Class-Based Object-Oriented programming also has a solution for ad-hoc polymorphism called "inheritance".  Inheritance is a bit less flexible than typeclasses, and in a staticly typed environment is sometimes called "subtype polymorphism".  Essentially, inheritance allows a class to include methods from a "parent" or "superclass":
 
 	class Dog < Animal
 		def initialize(name)
@@ -124,4 +124,4 @@ But they can be used by subclasses:
 		end
 	end
 
-If you want to prevent this for some reason (there is a big debate over if this is ever a good idea) you can use `private` instead of `protected`.  If you want to define methods that can be called by anyone again you can use the keyword `public`.
+If you want to prevent this for some reason (there is a big debate over if this is ever a good idea) you can use `private` instead of `protected`.  If you want to switch back to defining methods that can be called by anyone, you can use the keyword `public`.

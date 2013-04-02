@@ -27,7 +27,7 @@ You will also note, that we're duplicating a whole bunch of work!  We often have
 
 == Maps ==
 
-Ruby has a nice data structure built in that will help us here called a "map" (or a "table").  There are just a datastructure that acts like `(k -> Maybe v)` or a "key-value store".  We use them like this:
+Ruby has a nice data structure built in that will help us here called a "map" (or a "table").  This is a datastructure that acts like `(k -> Maybe v)` or a "key-value store".  We use them like this:
 
 	some_map = {}
 	some_map["hello"] = 6
@@ -110,7 +110,7 @@ Many people agree that the `return` should return "from the whole procedure".  B
 
 	proc {|arg1| arg1 + 12}
 
-A `Proc` is like any other anonymous procedure, but it closes over not just values that are in lexical scope when it is created, but also the return location.  A "lambda" is created with the `lambda` keyword and is a normal anonymous procedure (it does not close over the return location.)  A block passed to a procedure with no annotation is a `Proc`.
+A `Proc` is like any other anonymous procedure, but it closes over not just values that are in lexical scope when it is created, but also the return location.  A "lambda" is created with the `lambda` keyword and is a normal anonymous procedure (it does not close over the return location).  A block passed to a procedure with no annotation is always a `Proc`.
 
 == Hash Defaulting ==
 
