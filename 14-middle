@@ -10,7 +10,7 @@ which in Ruby looks like this:
 
 	def fibonacci(n)
 		case n
-			when 0, 1
+			when 1, 2
 				1
 			else
 				fibonacci(n - 1) + fibonacci(n - 2)
@@ -60,7 +60,7 @@ If you look up a key in a hash that does not exist, you will get the special val
 
 Memoisation (and the closely-related concept of "dynamic programming") is a technique for reducing known-duplicated computations in an algorithm by caching values as they get computed and then re-using the computed value later:
 
-	fib_cache = {0 => 1, 1 => 1}
+	fib_cache = {1 => 1, 2 => 1}
 	def fibonacci(n)
 		return fib_cache[n] if fib_cache[n]
 
