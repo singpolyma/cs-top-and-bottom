@@ -78,6 +78,6 @@ You would expect that if you tried to redefine `Object#send` like this, that the
 	{:a => {:b => 12}}.try(:[], :a).try(:[], :c) # nil
 	{:a => {:b => 12}}.try(:[], :r).try(:[], :b) # nil
 
-By adding a method to `Object`, we add a default implementation of that method to every object.  By adding a method to `NilClass`, we just add it for the special value `nil`.
+By adding a method to `Object`, we add a default implementation of that method to every object.  By adding a method to `NilClass`, we add it for just the special value `nil`.
 
 This can be very powerful, but it can also be very dangerous.  If two libraries decide to add different implementations of the same method to the same class, only one of them will actually end up being the one that is used.  This is sometimes referred to as "namespace pollution".
