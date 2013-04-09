@@ -96,14 +96,9 @@ This allows for code like the following:
 But there's a question.  What should this code do:
 
 	def something(an_array)
-		sum = 0
-
 		an_array.each { |v|
-			return 12 if v > 3
-			sum += 1
+			return 12
 		}
-
-		sum
 	end
 
 Many people agree that the `return` should return "from the whole procedure".  But the `return` is *inside* an anonymous procedure, so shouldn't it return from that?  Ruby's solution to this question is called a `Proc`.  They are created like this:
